@@ -69,12 +69,12 @@ app.MapOpenApi();
 app.MapScalarApiReference(opt =>
 {
     opt.WithTitle("Simpli API Docs")
-       .WithTheme(ScalarTheme.DeepSpace)
-       .WithOpenApiRoutePattern("/openapi/{documentName}.json");
+       .WithTheme(ScalarTheme.DeepSpace);
 
     opt.AddPreferredSecuritySchemes("Bearer");
-    opt.Servers = [new ScalarServer("https://api-simpli.onrender.com")];
 });
+
+app.UseStaticFiles();
 
 app.UseHttpsRedirection();
 app.UseCors("AllowNextJs");
