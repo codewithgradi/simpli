@@ -13,4 +13,8 @@ public partial class CompanyMappers
   public partial CompanyDto MapToDto(Company entity);
   public partial CompanyDto? MapToDtoFromGet(Company company);
   public partial CompanyDto? MapToDtoFromUpdateProfile(UpdateCompanyProfileDto dto);
+  public partial GetSystemEmailDto? MapToDtoFromGetEmail(SystemEmails email);
+
+  public partial SystemEmails? MapToEntityFromEmail(PostSystemEmailDto email);
+
 }

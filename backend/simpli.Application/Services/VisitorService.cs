@@ -11,13 +11,15 @@ public class VisitorService
   private readonly VisitorMappers _mapper;
   private readonly IEmailService _emailService;
   private readonly ILogger<VisitorService> _logger;
+    private readonly SystemEmailService _systemEmailServive;
 
-  public VisitorService(IVisitorRepo visitorRepo, VisitorMappers mapper, IEmailService service, ILogger<VisitorService>? logger)
+    public VisitorService(IVisitorRepo visitorRepo, VisitorMappers mapper, IEmailService service, ILogger<VisitorService>? logger, SystemEmailService systemEmailService)
   {
     _visitorRepo = visitorRepo;
     _mapper = mapper;
     _emailService = service;
     _logger = logger;
+    _systemEmailServive = systemEmailService;
   }
   public async Task<VisitorDto> CheckIn(CheckInDto visitorDto, int companyID, int roomId)
   {
@@ -32,6 +34,15 @@ public class VisitorService
               visitor.FirstName!,
               visitorDto.RoomNumber!,
               dataResult.QrCodeData);
+      var emailBody = new PostSystemEmailDto
+      {
+        CompanyId = companyID,
+        PassCode = dataResult.Visitor.PassCode,
+        RoomId = roomId,
+        VisitorFullName = dataResult.Visitor.FirstName!.ToString() + " " + dataResult.Visitor.LastName!.ToString()
+      };
+      
+      await _systemEmailServive.Post(emailBody,companyID,roomId);
     }
     catch (Exception e)
     {
