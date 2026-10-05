@@ -21,6 +21,8 @@ var builder = WebApplication.CreateBuilder(new WebApplicationOptions
 {
     Args = args
 });
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 
 // 2. Clear default JSON sources for cloud hosting compatibility
 // builder.Configuration.Sources.Clear();
@@ -66,15 +68,17 @@ var app = builder.Build();
 
 app.MapOpenApi();
 
+app.UseSwagger(c =>
+{
+    c.RouteTemplate = "openapi/{documentName}.json";
+});
+
 app.MapScalarApiReference(opt =>
 {
     opt.WithTitle("Simpli API Docs")
-       .WithTheme(ScalarTheme.DeepSpace);
-
-    opt.AddPreferredSecuritySchemes("Bearer");
+       .WithTheme(ScalarTheme.DeepSpace)
+       .WithOpenApiRoutePattern("/openapi/v1.json");
 });
-
-app.UseStaticFiles();
 
 app.UseHttpsRedirection();
 app.UseCors("AllowNextJs");
