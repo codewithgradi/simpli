@@ -324,7 +324,7 @@ Issues and pull requests are welcome! For major changes, please open an issue fi
 
 **Gradi Puata** — [@codewithgradi](https://github.com/codewithgradi)
 
-Project Link: [https://github.com/codewithgradi/simpli](https://github.com/codewithgradi/simpli)
+Project Link: [Live Link](https://simply-io.vercel.app/)
 
 <div align="center">
 Made with 💙 and a lot of ☕
