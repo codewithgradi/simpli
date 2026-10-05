@@ -22,15 +22,7 @@ var builder = WebApplication.CreateBuilder(new WebApplicationOptions
     Args = args
 });
 
-// 2. Clear default JSON sources for cloud hosting compatibility
-// builder.Configuration.Sources.Clear();
-
-// 3. Re-add JSON files
-// builder.Configuration
-//     .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
-//     .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: false);
-
-// 4. CRITICAL: Add environment variables LAST so .env overrides JSON placeholders
+// 2. Add environment variables so cloud settings override local settings
 builder.Configuration.AddEnvironmentVariables();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -64,7 +56,27 @@ builder.Services.AddScoped<McpToolRegistery>();
 
 var app = builder.Build();
 
+// 3. RUN AUTOMATIC MIGRATIONS & VERIFY DB AT STARTUP
+using (var scope = app.Services.CreateScope())
+{
+    try
+    {
+        var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        Console.WriteLine($"==> CONNECTED DB: {dbContext.Database.GetDbConnection().ConnectionString}");
 
+        if (dbContext.Database.IsRelational())
+        {
+            dbContext.Database.Migrate();
+            Console.WriteLine("==> DB MIGRATIONS APPLIED SUCCESSFULLY");
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"[CRITICAL ERROR DURING DB MIGRATION]: {ex.GetType().Name} - {ex.Message}");
+    }
+}
+
+// 4. OpenAPI & Scalar UI Routes
 app.UseSwagger(c =>
 {
     c.RouteTemplate = "openapi/{documentName}.json";
@@ -77,16 +89,23 @@ app.MapScalarApiReference(opt =>
        .WithOpenApiRoutePattern("/openapi/v1.json");
 });
 
-app.UseHttpsRedirection();
-app.UseCors("AllowNextJs");
+// 5. CORRECT MIDDLEWARE PIPELINE ORDER
+// Place Exception Handler first so ALL downstream pipeline errors are caught and logged
 app.UseMiddleware<GlobalExceptionMiddleware>();
-app.UseAuthentication();
 
+// Enable CORS for Next.js frontend as well as live Scalar UI
+app.UseCors(policy => policy
+    .AllowAnyOrigin()
+    .AllowAnyHeader()
+    .AllowAnyMethod());
+
+app.UseHttpsRedirection();
+app.UseAuthentication();
 app.UseAuthorization();
+
+// 6. MAP ENDPOINTS
 app.MapControllers();
 app.MapIdentityApi<AppUser>();
 app.MapMcp("/mcp");
-using var scope = app.Services.CreateScope();
-var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-Console.WriteLine($"==> CONNECTED DB: {dbContext.Database.GetDbConnection().ConnectionString}");
+
 app.Run();
