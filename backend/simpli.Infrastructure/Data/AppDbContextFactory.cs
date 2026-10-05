@@ -9,54 +9,50 @@ public class AppDbContextFactory : IDesignTimeDbContextFactory<AppDbContext>
 {
     public AppDbContext CreateDbContext(string[] args)
     {
-        // 1. Get the starting directory where the EF Core command was run
-        var currentDir = Directory.GetCurrentDirectory();
-        var directoryInfo = new DirectoryInfo(currentDir);
-        string rootDirectory = null;
+        var currentDir = new DirectoryInfo(Directory.GetCurrentDirectory());
+        string? envFilePath = null;
 
-        // 2. Walk up the directory tree until we find the solution root (simpli_v3)
-        while (directoryInfo != null)
+        // Traverse up parent directories until we find a .env file
+        while (currentDir != null)
         {
-            if (directoryInfo.Name.Equals("simpli_v3", StringComparison.OrdinalIgnoreCase))
+            var candidatePath = Path.Combine(currentDir.FullName, ".env");
+            if (File.Exists(candidatePath))
             {
-                rootDirectory = directoryInfo.FullName;
+                envFilePath = candidatePath;
                 break;
             }
-            directoryInfo = directoryInfo.Parent;
+            currentDir = currentDir.Parent;
         }
 
-        // Fallback: If we couldn't find the specific root folder name, use current directory
-        if (string.IsNullOrEmpty(rootDirectory))
+        if (envFilePath != null)
         {
-            rootDirectory = currentDir;
-        }
-
-        // 3. Locate and load the .env file
-        var envFilePath = Path.Combine(rootDirectory, ".env");
-
-        if (File.Exists(envFilePath))
-        {
+            // Load environment variables overwriting any existing process variables
             DotNetEnv.Env.Load(envFilePath);
+            Console.WriteLine($"[EF Factory Debug]: Loaded .env from '{envFilePath}'");
         }
         else
         {
             throw new FileNotFoundException(
-                $"[EF Factory Error]: Still looking for the .env file!\n" +
-                $"Checked path: '{envFilePath}'\n" +
-                $"Current Working Directory was: '{currentDir}'\n" +
-                $"Please verify your .env file is located at the root of your workspace.");
+                $"[EF Factory Error]: Could not locate '.env' file in '{Directory.GetCurrentDirectory()}' or any parent directory.");
         }
 
-        // 4. Read your DevDB connection string and safely trim any literal quotes
-        var rawConnectionString = Environment.GetEnvironmentVariable("ConnectionStrings__DevDB");
+        // Check all common key variations
+        var rawConnectionString = Environment.GetEnvironmentVariable("ConnectionStrings__ProdDB")
+            ?? Environment.GetEnvironmentVariable("ConnectionStrings__DevDB")
+            ?? Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection")
+            ?? Environment.GetEnvironmentVariable("DATABASE_URL");
+
         var connectionString = rawConnectionString?.Trim('"', '\'');
 
-        // 5. Guard clause validation check
         if (string.IsNullOrWhiteSpace(connectionString))
         {
             throw new InvalidOperationException(
-                $"[EF Factory Error]: Found your .env file at '{envFilePath}', but the key 'ConnectionStrings__DevDB' is empty or missing inside it.");
+                $"[EF Factory Error]: Found '.env' at '{envFilePath}', but no valid connection string key (ConnectionStrings__ProdDB, ConnectionStrings__DevDB, ConnectionStrings__DefaultConnection, or DATABASE_URL) was populated.");
         }
+
+        // Print host details so you can verify target DB before applying
+        var builder = new Npgsql.NpgsqlConnectionStringBuilder(connectionString);
+        Console.WriteLine($"[EF Factory Target Host]: {builder.Host} | Database: {builder.Database}");
 
         var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>();
         optionsBuilder.UseNpgsql(connectionString).UseSnakeCaseNamingConvention();

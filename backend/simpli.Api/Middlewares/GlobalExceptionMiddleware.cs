@@ -23,6 +23,7 @@ public class GlobalExceptionMiddleware : IMiddleware
     catch (Exception e)
     {
       _logger.LogError(e, "An unhandled exception occured {Message}", e.Message);
+      Console.WriteLine($"[UNHANDLED EXCEPTION]: {e}");
       await HandleExceptionAsync(context, e);
     }
   }
