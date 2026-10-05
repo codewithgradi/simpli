@@ -21,8 +21,6 @@ var builder = WebApplication.CreateBuilder(new WebApplicationOptions
 {
     Args = args
 });
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
 
 // 2. Clear default JSON sources for cloud hosting compatibility
 // builder.Configuration.Sources.Clear();
@@ -34,8 +32,8 @@ builder.Services.AddSwaggerGen();
 
 // 4. CRITICAL: Add environment variables LAST so .env overrides JSON placeholders
 builder.Configuration.AddEnvironmentVariables();
-
-builder.Services.AddOpenApi();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 builder.Services.AddRouting(opt => { opt.LowercaseUrls = true; });
 builder.Services.AddTransient<GlobalExceptionMiddleware>();
 builder.Services.AddControllers().AddJsonOptions(opt =>
@@ -66,7 +64,6 @@ builder.Services.AddScoped<McpToolRegistery>();
 
 var app = builder.Build();
 
-app.MapOpenApi();
 
 app.UseSwagger(c =>
 {
