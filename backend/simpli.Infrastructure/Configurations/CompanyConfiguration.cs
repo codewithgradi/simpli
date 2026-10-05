@@ -23,5 +23,11 @@ public class CompanyConfiguration : IEntityTypeConfiguration<Company>
     .WithOne(x => x.Company)
     .HasForeignKey(x => x.CompanyId)
     .OnDelete(DeleteBehavior.Restrict);
+
+    //One company have many system emails
+    builder.HasMany(c=>c.SystemEmails)
+    .WithOne(x=>x.Company)
+    .HasForeignKey(c=>c.CompanyId)
+    .OnDelete(DeleteBehavior.Restrict);
   }
 }

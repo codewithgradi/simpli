@@ -1,3 +1,5 @@
+using simpli.Domain.Entities;
+
 namespace simpli.Domain;
 
 public class Company
@@ -16,6 +18,7 @@ public class Company
 
   public List<Room>? Rooms { get; set; }
   public List<Visitor>? Visitors { get; set; }
+  public List<SystemEmails>? SystemEmails{get;set;}
   public AppUser? User { get; set; }
 
 }

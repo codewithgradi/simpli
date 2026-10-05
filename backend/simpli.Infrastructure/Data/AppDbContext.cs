@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using simpli.Domain;
+using simpli.Domain.Entities;
 
 
 public class AppDbContext : IdentityDbContext<AppUser>
@@ -15,6 +16,7 @@ public class AppDbContext : IdentityDbContext<AppUser>
   public DbSet<Company> Companies { get; set; }
   public DbSet<Room> Rooms { get; set; }
   public DbSet<Visitor> Visitors { get; set; }
+  public DbSet<SystemEmails> SystemEmails { get; set; }
 
 
   protected override void OnModelCreating(ModelBuilder builder)
