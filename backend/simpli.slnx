@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="simpli.Api/simpli.Api.csproj" />
+  <Project Path="simpli.Application.Tests/simpli.Application.Tests.csproj" />
+  <Project Path="simpli.Application/simpli.Application.csproj" />
+  <Project Path="simpli.Domain/simpli.Domain.csproj" />
+  <Project Path="simpli.Infrastructure/simpli.Infrastructure.csproj" />
+</Solution>
