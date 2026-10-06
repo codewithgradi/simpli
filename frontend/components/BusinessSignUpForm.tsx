@@ -63,7 +63,7 @@ const BusinessSignUpForm = () => {
         console.log('Missing base url');
         return;
       }
-      const res = await fetch(`${baseUrl}/api/auth/create`, {
+      const res = await fetch(`${baseUrl}/api/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

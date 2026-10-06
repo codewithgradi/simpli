@@ -12,7 +12,6 @@ public class RegisterDto
     [MinLength(8, ErrorMessage ="Password should be at least 8 characters long")]
     public string Password { get; set; }= string.Empty;
     
-    [Required(ErrorMessage = "Please provide company registration")]
     public string? RegistrationNumber { get; set; } = string.Empty;
     
     [Required(ErrorMessage = "Please provide company name")]
