@@ -11,11 +11,11 @@ namespace simpli.Api.Controllers;
 [ApiController]
 [Authorize]
 
-public class SystemEmailController:ControllerBase
+public class SystemController:ControllerBase
 {
     private readonly SystemEmailService _service;
 
-    public SystemEmailController(SystemEmailService service)
+    public SystemController(SystemEmailService service)
     {
         _service=service;
     }

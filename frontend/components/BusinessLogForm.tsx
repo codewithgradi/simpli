@@ -88,7 +88,7 @@ useEffect(() => {
       console.log('Missing base url');
       return;
     }
-    const res = await fetch(`${baseUrl}/api/auth/login`, {
+    const res = await fetch(`${baseUrl}/login`, {
       method: 'POST',
       credentials:"include",
       headers: {
