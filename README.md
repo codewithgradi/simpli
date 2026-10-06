@@ -86,46 +86,6 @@ sequenceDiagram
 
 ---
 
-## 🏗️ Architecture
-
-Built with **Clean Architecture** on the backend — each layer is independent, testable, and swappable.
-
-```mermaid
-flowchart TB
-    subgraph Client["🖥️ Frontend — Next.js 16 / React 19 / Tailwind 4"]
-        A1["(admin) routes"]
-        A2["(console) routes"]
-        A3["(visitor) routes"]
-        A4["Middleware<br>JWT cookie guard"]
-    end
-
-    subgraph Api["🔌 simpli.Api — Controllers, Middleware, Scalar/Swagger"]
-        B1[CompanyController]
-        B2[VisitorController]
-        B3[RoomController]
-        B4[NotificationController]
-        B5[SystemEmailController]
-    end
-
-    subgraph App["🧠 simpli.Application — DTOs, Services, Mappers"]
-        C1[VisitorService]
-        C2[Business Logic]
-        C3[Mapperly Mappers]
-    end
-
-    subgraph Infra["⚙️ simpli.Infrastructure — Repositories, Config, Utils"]
-        D1[EF Core Repositories]
-        D2[QRCoder]
-        D3[MailKit + Brevo]
-        D4[Hangfire Jobs]
-        D5[JWT + Identity]
-    end
-
-    Client -->|REST / JSON| Api --> App --> Infra
-    Infra --> DB[(PostgreSQL)]
-    Infra --> BREVO[(Brevo API)]
-```
-
 ---
 
 ## 🗄️ Data Model
