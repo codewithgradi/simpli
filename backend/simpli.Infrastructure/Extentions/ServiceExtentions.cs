@@ -9,6 +9,8 @@ using simpli.Domain.Exceptions;
 using Microsoft.Extensions.AI;
 using OpenAI;
 using System.ClientModel;
+using simpli.Application.Interfaces;
+using simpli.Infrastructure.Repository;
 namespace simpli.Infrastructure;
 
 public static class ServiceExtentions
@@ -103,11 +105,13 @@ public static class ServiceExtentions
     services.AddScoped<INotificationRepo, NotificationRepo>();
     services.AddScoped<IRoomRepo, RoomRepo>();
     services.AddScoped<IVisitorRepo, VisitorRepo>();
+    services.AddScoped<ISystemEmailsRepo, SystemEmailsRepo>();
 
     services.AddScoped<CompanyService>();
     services.AddScoped<NotificationService>();
     services.AddScoped<VisitorService>();
     services.AddScoped<RoomServices>();
+    services.AddScoped<SystemEmailService>();
 
     services.AddHttpClient<IEmailService, EmailService>();
 
