@@ -67,5 +67,5 @@ export function useCompany() {
      }
   };
 
-  return {getCompany,updateCompany,softDelete,reactivate}
+  return {getCompany,updateCompany,softDelete,reactivate,loading,error}
 }

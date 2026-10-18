@@ -20,4 +20,6 @@ export function useChat() {
       setLoading(false);
     }
   };
+
+  return {chat,loading,error}
 }

@@ -31,5 +31,5 @@ export function useSystemService(){
                setLoading(false);
              }
     };
-    return {getAllEmails,getOneEmail};
+    return {getAllEmails,getOneEmail,loading,error};
 }
