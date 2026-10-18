@@ -9,7 +9,7 @@ export interface Notification {
     visitorName :string;
     status: VisitorStatus;
     isRead:boolean;
-    createdAt:Date;
+    createdAt:string;
 }
 
 export const notificationService=  {

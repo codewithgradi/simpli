@@ -6,7 +6,7 @@ export interface SystemEmail{
     visitorFullname:string;
     roomId:string;
     passcode:string;
-    sentAt:Date;
+    sentAt:string;
 }
 
 export const systemEmailService={
