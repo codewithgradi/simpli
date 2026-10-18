@@ -1,8 +1,8 @@
 import { apiClient } from "@/context/apiClient";
 
 export enum VisitorStatus{
-    CheckedIn=0,
-    CheckedOut=1
+    CheckedIn,
+    CheckedOut,
 }
 export interface Notification {
     id:string;
