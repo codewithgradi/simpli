@@ -94,10 +94,7 @@ app.MapScalarApiReference(opt =>
 app.UseMiddleware<GlobalExceptionMiddleware>();
 
 // Enable CORS for Next.js frontend as well as live Scalar UI
-app.UseCors(policy => policy
-    .AllowAnyOrigin()
-    .AllowAnyHeader()
-    .AllowAnyMethod());
+app.UseCors("AllowNextJs");
 
 app.UseHttpsRedirection();
 app.UseAuthentication();

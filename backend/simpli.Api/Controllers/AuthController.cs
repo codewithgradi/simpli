@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using simpli.Application.Dtos.Auth;
@@ -12,11 +13,13 @@ namespace simpli.Api.Controllers
     {
         private readonly CompanyService _service;
         private readonly UserManager<AppUser> _userManager;
+        private readonly SignInManager<AppUser> _signInManager;
 
-        public AuthController(CompanyService companyService, UserManager<AppUser> userManager)
+        public AuthController(CompanyService companyService, UserManager<AppUser> userManager, SignInManager<AppUser> signInManager)
         {
             _service = companyService;
             _userManager = userManager;
+            _signInManager = signInManager;
         }
 
         [HttpPost("register")]
@@ -63,5 +66,13 @@ namespace simpli.Api.Controllers
 
             return Ok(new { Message = "Registration was successful." });
         }
-    }
+        [HttpPost("logout")]
+        [Authorize]
+        public async Task<IActionResult> LogOut()
+        {
+            await _signInManager.SignOutAsync();
+            return Ok(new { message = "user logged out" });
+        }
+    };
+
 }
