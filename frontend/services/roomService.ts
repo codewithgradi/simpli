@@ -22,16 +22,19 @@ export enum RoomStatus{
      Available, Occupied, Maintenance
 }
 export const roomService=  {
-    async getAll() : Promise<Room[]>{
-        return apiClient.get("/api/room/all");
+    async getAll(companyId? :string) : Promise<Room[]>{
+        const url = companyId
+          ? `/api/room/all?CmpId=${companyId}`
+          : `/api/room/all`;
+        return apiClient.get(url);
     },
     async getOne() : Promise<Room>{
         return apiClient.get(`/api/room/`);
     },
     async create(data:PostRoom):Promise<void>{
-        return apiClient.put("/api/room",data);
+        return apiClient.post("/api/room",data);
     },
-    async update(data:UpdateRoom):Promise<void>{
-        return apiClient.post("/api/room",data)
+    async update(data:UpdateRoom, id:number):Promise<void>{
+        return apiClient.put(`/api/room?Ri=${id}`,data)
     },
 }

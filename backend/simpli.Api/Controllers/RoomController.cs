@@ -20,11 +20,13 @@ namespace simpli.Api.Controllers
     {
       _roomService = services;
     }
-    [Authorize]
     [HttpGet("all")]
     public async Task<IActionResult> GetAllRooms([FromQuery] QueryParameters query)
     {
-      var companyId = Convert.ToInt32(User.FindFirstValue("CompanyId"));
+      if (string.IsNullOrWhiteSpace(query.CmpId) || !int.TryParse(query.CmpId, out int companyId))
+      {
+        return BadRequest(new { message = "Invalid or missing company ID" });
+      }
       if (companyId == null) return Unauthorized("Invalid Session.");
       var rooms = await _roomService.GetAllRooms(companyId, query);
       if (rooms == null) return BadRequest("Error");

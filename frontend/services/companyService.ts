@@ -10,7 +10,7 @@ export interface Company{
     isProfileComplete : boolean;
     isDeleted : boolean;
     website:string;
-    addressContent:AddressContent;
+    address:AddressContent;
     createdAt:Date;
 
 }
@@ -26,7 +26,7 @@ export interface UpdateCompany{
     registrationNumber : string;
     contactNumber : string;
     website:string;
-    addressContent:AddressContent;
+    address:AddressContent;
 }
 export interface UpdateCompanyResponse{
   companyName: string ;
@@ -40,12 +40,12 @@ export const companySevice=  {
         return apiClient.get("/api/company");
     },
     async updateCompany(data:UpdateCompany):Promise<UpdateCompanyResponse>{
-        return apiClient.put("api/company",data);
+        return apiClient.put("/api/company",data);
     },
     async softDelete():Promise<void>{
-        return apiClient.patch("api/company/soft-delete",{})
+        return apiClient.patch("/api/company/soft-delete",{})
     },
     async reactivate():Promise<void>{
-        return apiClient.patch("api/company/reactivate",{})
+        return apiClient.patch("/api/company/reactivate",{})
     }
 }

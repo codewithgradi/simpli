@@ -63,65 +63,65 @@ const BusinessLogForm = () => {
     }
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    let validationErrors: Partial<Record<string, string>> = {};
+ const handleSubmit = async (e: React.FormEvent) => {
+   e.preventDefault();
+   let validationErrors: Partial<Record<string, string>> = {};
 
-    if (!form.email.trim())
-      validationErrors.email = "Business email is required";
-    if (!form.password.trim())
-      validationErrors.password = "Password is required";
-    setErrors(validationErrors);
+   if (!form.email.trim())
+     validationErrors.email = "Business email is required";
+   if (!form.password.trim())
+     validationErrors.password = "Password is required";
+   setErrors(validationErrors);
 
-    const errorMessages = Object.values(validationErrors);
+   const errorMessages = Object.values(validationErrors);
 
-    if (errorMessages.length > 0) {
-      setShowNotification({
-        show: true,
-        msg: errorMessages[0] as string,
-        type: "negative",
-      });
-      return;
-    }
+   if (errorMessages.length > 0) {
+     setShowNotification({
+       show: true,
+       msg: errorMessages[0] as string,
+       type: "negative",
+     });
+     return;
+   }
 
-    try {
-      const data = await login(form);
+   try {
+     // login() returns LoginResponse typed data
+     const data = (await login(form)) as LoginResponse | null;
 
-      if (!data) {
-        // If login returned null, it means an error occurred and was captured by useAuthService
-        setShowNotification({
-          show: true,
-          msg: authError || "Invalid email or password",
-          type: "negative",
-        });
-        return;
-      }
+     if (!data || !data.accessToken) {
+       setShowNotification({
+         show: true,
+         msg: authError || "Invalid email or password",
+         type: "negative",
+       });
+       return;
+     }
 
-      setIsSubmitted(true);
+     setIsSubmitted(true);
 
-      console.log(data);
-      if (data.accessToken) {
-        Cookies.set("jwt", data.accessToken, { expires: data.expiresIn }); // expires in 1 day or adjust as needed
+     // 1. Save to localStorage so your apiClient Bearer headers pick it up
+     localStorage.setItem("accessToken", data.accessToken);
 
-        if (data.refreshToken) {
-          Cookies.set("refreshToken", data.refreshToken, { expires: 7 });
-        }
-      }
+     // 2. Save tokens to cookies for middleware / server-side usage
+     // Convert expiresIn (seconds) to days for js-cookie expiration calculation
+     const expiresInDays = data.expiresIn ? data.expiresIn / 86400 : 1;
+     Cookies.set("jwt", data.accessToken, { expires: expiresInDays });
 
-      router.push("/console");
-      router.refresh(); 
+     if (data.refreshToken) {
+       Cookies.set("refreshToken", data.refreshToken, { expires: 7 });
+     }
 
-      router.push("/console");
-    } catch (err) {
-      setShowNotification({
-        show: true,
-        msg: "Connection refused. Is the server running?",
-        type: "negative",
-      });
-      console.log("Connection error:", err);
-    }
-  };
-
+     router.push("/console");
+     router.refresh();
+   } catch (err: any) {
+     setShowNotification({
+       show: true,
+       msg: err.message || "Connection refused. Is the server running?",
+       type: "negative",
+     });
+     console.log("Connection error:", err);
+   }
+ };
   return (
     <div className="min-h-screen w-full flex bg-white font-sans selection:bg-[#00ed64] selection:text-[#001e2b]">
       {showNotification.show && (

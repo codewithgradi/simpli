@@ -1,65 +1,54 @@
-'use client';
-import React, { useState } from 'react';
-import { AlertTriangle, X, ShieldAlert, LogOut, Loader2 } from 'lucide-react';
+"use client";
+import React, { useState } from "react";
+import { AlertTriangle, X, ShieldAlert, LogOut, Loader2 } from "lucide-react";
+import { useCompany } from "@/hooks/useCompany";
 
 interface DeactivationModalProps {
   isOpen: boolean;
   onClose: () => void;
-  // Optional: callback to redirect user or show success notification in parent
   onSuccess?: () => void;
 }
 
-const baseUrl = process.env.NODE_ENV === 'development'
-  ? process.env.NEXT_PUBLIC_DEVELOPMENT_URL
-  : process.env.NEXT_PUBLIC_PRODUCTION_URL;
-
-const DeactivationModal = ({ isOpen, onClose, onSuccess }: DeactivationModalProps) => {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+const DeactivationModal = ({
+  isOpen,
+  onClose,
+  onSuccess,
+}: DeactivationModalProps) => {
+  // Consume softDelete, loading, and error states from your useCompany hook
+  const { softDelete, loading, error: hookError } = useCompany();
+  const [localError, setLocalError] = useState<string | null>(null);
 
   const handleDeactivate = async () => {
-    setLoading(true);
-    setError(null);
+    setLocalError(null);
 
-    try {
-      const res = await fetch(`${baseUrl}/api/company/profile/deactivate`, {
-        method: 'PUT', // Usually PATCH for status changes
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-      });
+    const res = await softDelete();
 
-      if (!res.ok) {
-        const result = await res.json();
-        throw new Error(result.message || "Failed to deactivate account");
-      }
-
-      // If successful
-      if (onSuccess) onSuccess();
-      onClose();
-      
-      // Optional: Redirect to login or landing page
-      window.location.href = '/login'; 
-      
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
+    if (hookError) {
+      setLocalError(hookError);
+      return;
     }
+
+    if (onSuccess) onSuccess();
+    onClose();
+
+    // Redirect to login page after successful deactivation
+    window.location.href = "/login";
   };
 
   if (!isOpen) return null;
 
+  const displayError = localError || hookError;
+
   return (
-    <div className="fixed inset-0 z-10000 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
       {/* Backdrop */}
-      <div 
+      <div
         className="absolute inset-0 bg-[#001e2b]/80 backdrop-blur-md animate-in fade-in duration-300"
         onClick={!loading ? onClose : undefined}
       />
 
       {/* Modal Container */}
       <div className="relative bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-red-100">
-        
         {/* Warning Header */}
         <div className="bg-red-50 p-8 flex flex-col items-center text-center">
           <div className="p-4 bg-white rounded-2xl shadow-sm mb-4">
@@ -76,14 +65,17 @@ const DeactivationModal = ({ isOpen, onClose, onSuccess }: DeactivationModalProp
         {/* Content */}
         <div className="p-8 space-y-4">
           <p className="text-sm text-gray-500 leading-relaxed text-center">
-            Are you absolutely sure? This will disable your company profile and 
-            <span className="font-bold text-[#001e2b]"> terminate all active room listings </span> 
+            Are you absolutely sure? This will disable your company profile and
+            <span className="font-bold text-[#001e2b]">
+              {" "}
+              terminate all active room listings{" "}
+            </span>
             immediately.
           </p>
 
-          {error && (
+          {displayError && (
             <div className="p-3 bg-red-100 border border-red-200 rounded-xl text-red-700 text-xs font-bold text-center animate-pulse">
-              {error}
+              {displayError}
             </div>
           )}
         </div>
@@ -98,10 +90,12 @@ const DeactivationModal = ({ isOpen, onClose, onSuccess }: DeactivationModalProp
             {loading ? (
               <Loader2 className="animate-spin" size={16} />
             ) : (
-              <><LogOut size={16}/> Deactivate Now</>
+              <>
+                <LogOut size={16} /> Deactivate Now
+              </>
             )}
           </button>
-          
+
           <button
             onClick={onClose}
             disabled={loading}
@@ -113,7 +107,7 @@ const DeactivationModal = ({ isOpen, onClose, onSuccess }: DeactivationModalProp
 
         {/* Close Icon (Hidden during loading for safety) */}
         {!loading && (
-          <button 
+          <button
             onClick={onClose}
             className="absolute top-6 right-6 p-2 text-red-300 hover:text-red-500 rounded-full transition-colors"
           >
