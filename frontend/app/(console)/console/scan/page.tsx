@@ -236,10 +236,10 @@ export default function GuardExitPage() {
   };
 
   // Fetch Emails/Logs Action
-  const handleFetchEmails = async () => {
-    const data = await getAllEmails();
-    if (data) setEmails(Array.isArray(data) ? data : []);
-  };
+  // const handleFetchEmails = async () => {
+  //   const data = await getAllEmails();
+  //   if (data) setEmails(Array.isArray(data) ? data : []);
+  // };
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-800 flex flex-col font-sans">
@@ -303,7 +303,7 @@ export default function GuardExitPage() {
             <span>Guard Support</span>
           </button>
 
-          <button
+          {/* <button
             onClick={() => {
               setActiveTab("emails");
               if (emails.length === 0) handleFetchEmails();
@@ -316,7 +316,7 @@ export default function GuardExitPage() {
           >
             <Mail size={18} />
             <span>Logs & Mail</span>
-          </button>
+          </button> */}
         </nav>
 
         {/* Content Panel */}
@@ -482,7 +482,7 @@ export default function GuardExitPage() {
             </div>
           )}
 
-          {/* TAB 3: SYSTEM LOGS / MAIL */}
+          {/* TAB 3: SYSTEM LOGS / MAIL
           {activeTab === "emails" && (
             <div className="flex-1 flex flex-col h-full">
               <div className="pb-3 mb-4 border-b border-slate-200 flex items-center justify-between">
@@ -534,7 +534,7 @@ export default function GuardExitPage() {
                 </div>
               )}
             </div>
-          )}
+          )} */}
         </section>
       </div>
 

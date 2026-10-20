@@ -7,4 +7,5 @@ public interface IVisitorRepo
     Task CheckOut(Visitor visitor);
     Task<Visitor> GetVisitor(int id);
     Task<List<Visitor>> GetAllVisitors(GetVisitorsQueryParameters query, int companyID);
+    Task<List<Visitor>> GetAllVisitorsStats(int companyID);
 }

@@ -112,4 +112,9 @@ public class RoomRepo : IRoomRepo
 
         return room.RoomNumber!;
     }
+
+    public async Task<List<Room>> GetAllRoomsStats(int companyId)
+    {
+       return await _context.Rooms.Where(c=>c.CompanyId==companyId).ToListAsync();
+    }
 }

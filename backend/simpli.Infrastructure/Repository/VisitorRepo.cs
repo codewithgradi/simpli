@@ -154,6 +154,11 @@ public class VisitorRepo : IVisitorRepo
         .ToListAsync();
     }
 
+    public async Task<List<Visitor>> GetAllVisitorsStats(int companyID)
+    {
+        return await _context.Visitors.Where(x=>x.CompanyId == companyID).ToListAsync();
+    }
+
     public async Task<Visitor> GetVisitor(int id)
     {
         var visitor = await _context.Visitors.FirstOrDefaultAsync(x => x.Id == id);
