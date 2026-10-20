@@ -1,5 +1,5 @@
 import React, { useState, ChangeEvent, FormEvent } from 'react';
-import MyNotification from '../components/Notification';
+import MyNotification from '../components/NotificationLogoutToast';
 
 interface FeedbackFormData {
   name: string;
