@@ -65,7 +65,7 @@ export default function HotelDashboard() {
       console.log(error);
     }
   };
-
+//Triger
   if (!isloggedIn)
     return (
       <NotificationToast
