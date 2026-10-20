@@ -1,4 +1,4 @@
-import {apiClient} from "@/context/apiClient"
+import { apiClient } from "@/context/apiClient";
 export enum Gender {
   Male,
   Female,
@@ -24,7 +24,7 @@ export interface Visitor {
   phoneNumber: string | null;
   email: string | null;
   reasonForVisit: ReasonForVisit;
-  checkInTime: string; 
+  checkInTime: string;
   checkOutTime: string | null;
   status: VisitorStatus;
   createdAt: string;
@@ -33,12 +33,12 @@ export interface Visitor {
   companyId: number;
   roomId: number;
 }
-export interface CheckOut{
-    passCode:string;
-    roomId:string;
+export interface CheckOut {
+  passCode: string;
+  roomId: string;
 }
 export interface CheckIn {
-  companyId:string;
+  companyId: string;
   firstName: string;
   lastName: string;
   idNumber: string;
@@ -51,35 +51,37 @@ export interface CheckIn {
 export interface PaginatedObject {
   sortOrder?: string;
   Page?: number;
-  SortBy?: string; 
+  SortBy?: string;
   Size?: number;
 }
-export const visitorService=  {
-    async getAll(query?:PaginatedObject) : Promise<Visitor[]>{
-        const params = new URLSearchParams();
+export const visitorService = {
+  async getAll(query?: PaginatedObject): Promise<Visitor[]> {
+    const params = new URLSearchParams();
 
-        if (query?.sortOrder) params.append("sortOrder", query.sortOrder);
-        if (query?.Page) params.append("page", query.Page.toString());
-        if (query?.Size) params.append("size", query.Size.toString());
+    if (query?.sortOrder) params.append("sortOrder", query.sortOrder);
+    if (query?.Page) params.append("page", query.Page.toString());
+    if (query?.Size) params.append("size", query.Size.toString());
 
-        const queryString = params.toString();
-        return apiClient.get(
-          `/api/visitor${queryString ? `?${queryString}` : ""}`,
-        );
-    },
-    async getOne(visitorId:string) : Promise<Visitor>{
-        return apiClient.get(`/api/room/${visitorId}`);
-    },
-    async checkIn(data:CheckIn, roomId : string):Promise<Visitor>{
-        return apiClient.post(`/api/visitor/check-in?RoomId=${roomId}`,data);
-    },
-    async checkOut(data:CheckOut):Promise<void>{
-      try {
-        // apiClient.post will throw an Error if response.ok is false (e.g. 400 or 500)
-        return await apiClient.post("/api/visitor/checkout", data);
-      } catch (err: any) {
-        // Re-throw so the frontend catch block can read the error message
-        throw err;
-      }
-    },
-}
+    const queryString = params.toString();
+    return apiClient.get(`/api/visitor${queryString ? `?${queryString}` : ""}`);
+  },
+  async getOne(visitorId: string): Promise<Visitor> {
+    return apiClient.get(`/api/room/${visitorId}`);
+  },
+  async checkIn(data: CheckIn, roomId: string): Promise<Visitor> {
+    return apiClient.post(`/api/visitor/check-in?RoomId=${roomId}`, data);
+  },
+  async checkOut(data: CheckOut): Promise<void> {
+    const params = new URLSearchParams();
+    params.append("RoomId", data.roomId);
+    const queryString = params.toString();
+
+    try {
+      // apiClient.post will throw an Error if response.ok is false (e.g. 400 or 500)
+      return await apiClient.post(`/api/visitor/checkout?${queryString}`, data.passCode);
+    } catch (err: any) {
+      // Re-throw so the frontend catch block can read the error message
+      throw err;
+    }
+  },
+};
