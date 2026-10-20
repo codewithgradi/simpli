@@ -1,26 +1,37 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import {
-  LayoutGrid,
   RefreshCw,
   Filter,
   Edit3,
   X,
-  TrendingUp,
   Search,
   Hash,
   Layers,
-  MoreVertical,
   Inbox,
+  ArrowUpDown,
 } from "lucide-react";
-import Notification from "./Notification";
+import NotificationToast from "./NotificationLogoutToast";
 import { useRoom } from "@/hooks/useRoom";
 import { Room, UpdateRoom, RoomStatus } from "@/services/roomService";
+
+export interface PaginatedObject {
+  sortOrder?: string;
+  SortBy?: string;
+  Page?: number;
+  Size?: number;
+}
 
 const RoomManagement = () => {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [filterStatus, setFilterStatus] = useState<string>("All");
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Pagination & Sorting State
+  const [page, setPage] = useState<number>(1);
+  const [size, setSize] = useState<number>(10);
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const [hasMore, setHasMore] = useState<boolean>(true);
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
@@ -30,34 +41,95 @@ const RoomManagement = () => {
     type: "positive" as "positive" | "negative",
   });
 
-  // Consume custom hook
-  const {  updateRoom, loading, error, getRoomsPrivate } = useRoom();
+  const tableContainerRef = useRef<HTMLDivElement>(null);
 
-  const fetchRoomsData = async () => {
-    const result = await getRoomsPrivate();
-    if (result) {
-      const actualData = Array.isArray(result)
-        ? result
-        : (result as any).data || [];
-      setRooms(Array.isArray(actualData) ? actualData : []);
-    } else if (error) {
-      setNotification({
-        show: true,
-        msg: error || "Failed to load rooms",
-        type: "negative",
+  // Consume custom hook
+  const { updateRoom, loading, error, getRoomsPrivate } = useRoom();
+
+  // Stabilize getRoomsPrivate reference to prevent infinite loops
+  const getRoomsPrivateRef = useRef(getRoomsPrivate);
+  useEffect(() => {
+    getRoomsPrivateRef.current = getRoomsPrivate;
+  }, [getRoomsPrivate]);
+
+  // Stable fetch function with empty dependency array
+  const fetchRoomsData = useCallback(
+    async (
+      currentPage: number,
+      currentSize: number,
+      currentSort: string,
+      isNewQuery: boolean = false,
+    ) => {
+      const result = await getRoomsPrivateRef.current({
+        Page: currentPage,
+        Size: currentSize,
+        sortOrder: currentSort,
+        SortBy: "CreatedAt",
       });
+
+      if (result) {
+        const actualData = Array.isArray(result)
+          ? result
+          : (result as any).data || [];
+
+        if (actualData.length < currentSize) {
+          setHasMore(false);
+        } else {
+          setHasMore(true);
+        }
+
+        setRooms((prev) =>
+          isNewQuery ? actualData : [...prev, ...actualData],
+        );
+      } else if (error) {
+        setNotification({
+          show: true,
+          msg: error || "Failed to load rooms",
+          type: "negative",
+        });
+      }
+    },
+    [error],
+  );
+
+  // Initial load & filter/sort resets (Triggered ONLY when sortOrder or size changes)
+  useEffect(() => {
+    setRooms([]);
+    setPage(1);
+    setHasMore(true);
+    fetchRoomsData(1, size, sortOrder, true);
+  }, [sortOrder, size, fetchRoomsData]);
+
+  // Trigger load on infinite scroll or button page increment
+  useEffect(() => {
+    if (page > 1) {
+      fetchRoomsData(page, size, sortOrder, false);
     }
+  }, [page, size, sortOrder, fetchRoomsData]);
+
+  // Manual Refresh handler
+  const handleRefresh = () => {
+    setRooms([]);
+    setPage(1);
+    setHasMore(true);
+    fetchRoomsData(1, size, sortOrder, true);
   };
 
-  useEffect(() => {
-    fetchRoomsData();
-  }, []);
+  // Handle scroll event for infinite loading
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const target = e.currentTarget;
+    const scrollBottom =
+      target.scrollHeight - target.scrollTop <= target.clientHeight + 20;
+
+    if (scrollBottom && !loading && hasMore) {
+      setPage((prev) => prev + 1);
+    }
+  };
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedRoom) return;
 
-    // Mapping using the exact UpdateRoom interface (without id)
     const updatePayload: UpdateRoom = {
       roomNumber: selectedRoom.roomNumber,
       floor: Number(selectedRoom.floor),
@@ -65,7 +137,6 @@ const RoomManagement = () => {
       status: Number(selectedRoom.status),
     };
 
-    // Call updateRoom with data and id separately as configured in your hook
     await updateRoom(updatePayload, parseInt(selectedRoom.id, 10));
 
     if (error) {
@@ -73,8 +144,13 @@ const RoomManagement = () => {
     } else {
       setNotification({ show: true, msg: "Room updated!", type: "positive" });
       setIsEditModalOpen(false);
-      fetchRoomsData();
+      handleRefresh();
     }
+  };
+
+  // Toggle Sort Order
+  const toggleSort = () => {
+    setSortOrder((prev) => (prev === "desc" ? "asc" : "desc"));
   };
 
   const filteredRooms = rooms.filter((room) => {
@@ -88,7 +164,6 @@ const RoomManagement = () => {
     return matchesStatus && matchesSearch;
   });
 
-  // Get string keys of RoomStatus enum for dropdowns
   const roomStatusKeys = Object.keys(RoomStatus).filter((k) =>
     isNaN(Number(k)),
   );
@@ -96,7 +171,7 @@ const RoomManagement = () => {
   return (
     <div className="p-8 bg-gray-50 min-h-screen font-sans">
       {notification.show && (
-        <Notification
+        <NotificationToast
           message={notification.msg}
           type={notification.type}
           onClose={() => setNotification({ ...notification, show: false })}
@@ -108,12 +183,9 @@ const RoomManagement = () => {
         <div className="p-6 border-b border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h2 className="text-xl font-bold text-[#001e2b]">Room Inventory</h2>
-            <p className="text-sm text-gray-500">
-              Manage and monitor facility room statuses.
-            </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-3">
             <div className="relative">
               <Search
                 className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
@@ -127,6 +199,17 @@ const RoomManagement = () => {
                 className="pl-9 pr-4 py-2 border border-gray-300 rounded text-sm outline-none focus:border-[#00ed64]"
               />
             </div>
+
+            {/* Sort Toggle Button */}
+            <button
+              onClick={toggleSort}
+              className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors shadow-sm cursor-pointer"
+            >
+              <ArrowUpDown size={14} className="text-gray-500" />
+              <span>
+                {sortOrder === "desc" ? "Latest to Oldest" : "Oldest to Latest"}
+              </span>
+            </button>
 
             <div className="relative">
               <select
@@ -147,12 +230,28 @@ const RoomManagement = () => {
               />
             </div>
 
+            {/* Page Size Selector */}
+            <select
+              value={size}
+              onChange={(e) => {
+                setSize(Number(e.target.value));
+              }}
+              className="px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded outline-none focus:border-[#00ed64] cursor-pointer shadow-sm"
+            >
+              <option value={5}>5 per load</option>
+              <option value={10}>10 per load</option>
+              <option value={20}>20 per load</option>
+            </select>
+
+            {/* Refresh Button */}
             <button
-              onClick={fetchRoomsData}
-              className="p-2 border border-gray-300 rounded hover:bg-gray-50"
+              onClick={handleRefresh}
+              disabled={loading}
+              title="Refresh rooms"
+              className="p-2.5 border border-gray-300 rounded hover:bg-gray-50 cursor-pointer disabled:opacity-40"
             >
               <RefreshCw
-                size={18}
+                size={16}
                 className={
                   loading ? "animate-spin text-[#00ed64]" : "text-gray-500"
                 }
@@ -161,16 +260,20 @@ const RoomManagement = () => {
           </div>
         </div>
 
-        {/* --- Table Section --- */}
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead className="bg-gray-50 text-[11px] uppercase tracking-widest font-bold text-gray-400">
+        {/* --- Scrollable Table Section --- */}
+        <div
+          ref={tableContainerRef}
+          onScroll={handleScroll}
+          className="overflow-y-auto max-h-[500px]"
+        >
+          <table className="w-full text-left border-collapse">
+            <thead className="sticky top-0 bg-gray-50 z-10 text-[11px] uppercase tracking-widest font-bold text-gray-400 border-b border-gray-100">
               <tr>
-                <th className="px-6 py-3">Room Details</th>
-                <th className="px-6 py-3 text-center">Stats</th>
-                <th className="px-6 py-3">Type</th>
-                <th className="px-6 py-3">Status</th>
-                <th className="px-6 py-3 text-right">Actions</th>
+                <th className="px-6 py-3 bg-gray-50">Room Details</th>
+                <th className="px-6 py-3 text-center bg-gray-50">Stats</th>
+                <th className="px-6 py-3 bg-gray-50">Type</th>
+                <th className="px-6 py-3 bg-gray-50">Status</th>
+                <th className="px-6 py-3 text-right bg-gray-50">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 text-sm">
@@ -231,12 +334,9 @@ const RoomManagement = () => {
                             setSelectedRoom({ ...room });
                             setIsEditModalOpen(true);
                           }}
-                          className="p-1 hover:bg-gray-200 rounded-full transition-colors"
+                          className="p-1 hover:bg-gray-200 rounded-full transition-colors cursor-pointer"
                         >
-                          <Edit3
-                            size={16}
-                            className="text-gray-400 cursor-pointer"
-                          />
+                          <Edit3 size={16} className="text-gray-400" />
                         </button>
                       </td>
                     </tr>
@@ -263,6 +363,44 @@ const RoomManagement = () => {
               )}
             </tbody>
           </table>
+
+          {/* Infinite Scroll / Loading Status */}
+          {loading && rooms.length > 0 && (
+            <div className="py-3 text-center text-xs text-gray-400 bg-gray-50/50">
+              Loading more rooms...
+            </div>
+          )}
+
+          {!hasMore && rooms.length > 0 && (
+            <div className="py-3 text-center text-xs text-gray-400 bg-gray-50/50">
+              You've reached the end of the list.
+            </div>
+          )}
+        </div>
+
+        {/* --- Pagination Footer with Prev & Next Buttons --- */}
+        <div className="p-4 flex items-center justify-between border-t border-gray-100 bg-gray-50/50">
+          <span className="text-xs text-gray-500">
+            Current Page: <strong className="text-gray-700">{page}</strong>
+          </span>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setPage((p) => Math.max(p - 1, 1))}
+              disabled={page === 1 || loading}
+              className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed shadow-sm transition-colors cursor-pointer"
+            >
+              Previous
+            </button>
+
+            <button
+              onClick={() => setPage((p) => p + 1)}
+              disabled={!hasMore || loading}
+              className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed shadow-sm transition-colors cursor-pointer"
+            >
+              Next
+            </button>
+          </div>
         </div>
       </div>
 
@@ -281,7 +419,7 @@ const RoomManagement = () => {
               </div>
               <button
                 onClick={() => setIsEditModalOpen(false)}
-                className="hover:bg-white/10 p-2 rounded-full"
+                className="hover:bg-white/10 p-2 rounded-full cursor-pointer"
               >
                 <X size={24} />
               </button>
@@ -333,7 +471,7 @@ const RoomManagement = () => {
                     onChange={(e) =>
                       setSelectedRoom({ ...selectedRoom, type: e.target.value })
                     }
-                    className="w-full p-4 bg-gray-50 border rounded-2xl font-bold outline-none"
+                    className="w-full p-4 bg-gray-50 border rounded-2xl font-bold outline-none cursor-pointer"
                   >
                     <option value="Standard">Standard</option>
                     <option value="Conference">Conference Room</option>
@@ -358,7 +496,7 @@ const RoomManagement = () => {
                         status: Number(e.target.value) as RoomStatus,
                       })
                     }
-                    className="w-full p-4 bg-gray-50 border rounded-2xl font-bold outline-none"
+                    className="w-full p-4 bg-gray-50 border rounded-2xl font-bold outline-none cursor-pointer"
                   >
                     {roomStatusKeys.map((statusKey) => {
                       const enumValue =
@@ -377,14 +515,14 @@ const RoomManagement = () => {
                 <button
                   type="button"
                   onClick={() => setIsEditModalOpen(false)}
-                  className="flex-1 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest hover:bg-gray-50 rounded-2xl transition-all"
+                  className="flex-1 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest hover:bg-gray-50 rounded-2xl transition-all cursor-pointer"
                 >
                   Discard
                 </button>
                 <button
                   type="submit"
                   disabled={loading}
-                  className="flex-1 py-4 bg-[#001e2b] text-[#00ed64] text-[10px] font-black uppercase tracking-widest rounded-2xl shadow-xl hover:scale-[1.02] transition-all disabled:opacity-50"
+                  className="flex-1 py-4 bg-[#001e2b] text-[#00ed64] text-[10px] font-black uppercase tracking-widest rounded-2xl shadow-xl hover:scale-[1.02] transition-all disabled:opacity-50 cursor-pointer"
                 >
                   {loading ? "Syncing..." : "Update System"}
                 </button>

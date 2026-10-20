@@ -23,6 +23,19 @@ export function useAuthService() {
       setLoading(false);
     }
   };
+  const refresh = async (refreshToken: string): Promise<LoginResponse | null> => {
+    setLoading(true);
+    setError(null);
+    try {
+      const user = await authService.refresh(refreshToken);
+      return user;
+    } catch (err: any) {
+      setError(err.message || "Please log in again");
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const logout = async () => {
     setLoading(true);
@@ -50,5 +63,5 @@ export function useAuthService() {
     }
   };
 
-  return {login,logout,register,error,loading}
+  return {login,logout,register,refresh,error,loading}
 }

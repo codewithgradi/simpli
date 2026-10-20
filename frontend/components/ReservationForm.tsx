@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import Notification from "./Notification";
+import Notification from "./NotificationLogoutToast";
 import SuccessScreen from "./SuccesScreen";
 import { useVisitor } from "@/hooks/useVisitor";
 import { useRoom } from "@/hooks/useRoom";

@@ -28,4 +28,7 @@ export const authService = {
     async register(body:RegisterRequest):Promise<void>{
         return apiClient.post("/api/auth/register",body);
     },
+    async refresh(refreshToken:string):Promise<LoginResponse>{
+        return apiClient.post("/refresh",refreshToken);
+    }
 }

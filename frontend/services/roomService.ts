@@ -1,4 +1,5 @@
 import { apiClient } from "@/context/apiClient";
+import { PaginatedObject } from "./notificationService";
 export interface Room {
   id: string;
   roomNumber: string;
@@ -22,12 +23,35 @@ export enum RoomStatus{
      Available, Occupied, Maintenance
 }
 export const roomService=  {
-    async getAll(companyId :string) : Promise<Room[]>{
-       
-        return apiClient.get(`/api/room/public/all?CmpId=${companyId}`);
+    async getAll(companyId :string, query? :PaginatedObject) : Promise<Room[]>{
+            const safeQuery = query || {};
+
+            const params = new URLSearchParams();
+
+            // Always append parameters with sensible defaults
+            params.append("sortOrder", safeQuery.sortOrder || "desc");
+            params.append("page", (safeQuery.Page || 1).toString());
+            params.append("size", (safeQuery.Size || 10).toString());
+
+            const queryString = params.toString();
+
+            return apiClient.get(`/api/room/public/all?CmpId=${companyId}&${queryString}`);
+
     },
-    async  getAllPrivate(): Promise<Room[]> {
-        return apiClient.get("/api/room/company/all");
+    async  getAllPrivate(query? : PaginatedObject): Promise<Room[]> {
+            const safeQuery = query || {};
+
+            const params = new URLSearchParams();
+
+            // Always append parameters with sensible defaults
+            params.append("sortOrder", safeQuery.sortOrder || "desc");
+            params.append("page", (safeQuery.Page || 1).toString());
+            params.append("size", (safeQuery.Size || 10).toString());
+
+            const queryString = params.toString();
+
+            return apiClient.get(`/api/room/company/all?${queryString}`);
+
     },
     async getOne() : Promise<Room>{
         return apiClient.get(`/api/room/`);

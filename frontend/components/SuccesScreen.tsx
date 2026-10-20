@@ -87,7 +87,7 @@ export default function SuccessScreen({ data }: SuccessScreenProps) {
           <div className="flex flex-col items-center justify-center py-2 bg-gray-50 rounded-xl border border-gray-100 p-4">
             <QRCodeSVG
               value={qrValue}
-              size={130}
+              size={330}
               level="H"
               includeMargin={false}
             />

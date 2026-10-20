@@ -35,18 +35,24 @@ public class NotificationRepo : INotificationRepo
         IQueryable<Notification> notificationsQuery = _context.Notifications
              .Where(x => x.CompanyId == companyID);
 
-        if (string.IsNullOrEmpty(query.SortBy))
+        // Check if a sort direction was provided, defaulting to descending (latest to oldest)
+        bool isDescending = string.IsNullOrEmpty(query.SortOrder) ||
+                            query.SortOrder.Equals("desc", StringComparison.OrdinalIgnoreCase);
+
+        // Apply sorting based on the field requested (defaulting to CreatedAt)
+        if (string.Equals(query.SortBy, "Id", StringComparison.OrdinalIgnoreCase))
         {
-            bool fromLattest = query.SortBy.Equals("desc", StringComparison.OrdinalIgnoreCase);
-            notificationsQuery = fromLattest ?
-            notificationsQuery.OrderByDescending(v => v.CreatedAt)
-            : notificationsQuery.OrderBy(v => v.CreatedAt);
+            notificationsQuery = isDescending
+                ? notificationsQuery.OrderByDescending(v => v.Id)
+                : notificationsQuery.OrderBy(v => v.Id);
         }
         else
         {
-            notificationsQuery = notificationsQuery.OrderBy(v => v.Id);
+            // Default sort by CreatedAt (Latest to Oldest)
+            notificationsQuery = isDescending
+                ? notificationsQuery.OrderByDescending(v => v.CreatedAt)
+                : notificationsQuery.OrderBy(v => v.CreatedAt);
         }
-
 
         return await notificationsQuery
             .Skip(query.Size * (query.Page - 1))

@@ -1,3 +1,4 @@
+import { PaginatedObject } from "@/services/notificationService";
 import { CheckIn, CheckOut, visitorService } from "@/services/visitorService";
 import { useState } from "react";
 
@@ -5,12 +6,12 @@ export function useVisitor(){
       const [error, setError] = useState<string | null>();
       const [loading, setLoading] = useState(false);
     
-      const getVisitors = async () => {
+      const getVisitors = async (query?:PaginatedObject) => {
         setLoading(true);
         setError(null);
     
         try {
-          const visitors = await visitorService.getAll();
+          const visitors = await visitorService.getAll(query);
           return visitors;
         } catch (err: any) {
           setError(err.message || "Could not get visitors");

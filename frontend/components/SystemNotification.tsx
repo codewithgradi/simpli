@@ -1,13 +1,22 @@
 "use client";
 
-import { UserCheck, Clock, X, BellRing, Trash2, Loader2 } from "lucide-react";
+import {
+  UserCheck,
+  UserX,
+  Clock,
+  X,
+  BellRing,
+  Trash2,
+  Loader2,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNotification } from "@/hooks/useNotification";
 
-interface Notification {
-  id: string;
+interface NotificationItem {
+  id: string | number;
   visitorName: string;
-  time: string;
+  status: "CheckedIn" | "CheckedOut" | string;
+  createdAt: string;
   isRead: boolean;
 }
 
@@ -17,7 +26,7 @@ interface Props {
 }
 
 const NotificationSidebar = ({ isOpen, onClose }: Props) => {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
 
   // Consume hook methods and states
   const { getAll, deleteNotifactions, markAllRead, loading, error } =
@@ -45,7 +54,7 @@ const NotificationSidebar = ({ isOpen, onClose }: Props) => {
   // Handler for "Mark all as read"
   const handleMarkAllRead = async () => {
     setActionLoading(true);
-    const res = await markAllRead();
+    await markAllRead();
     if (!error) {
       setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
     } else {
@@ -57,13 +66,20 @@ const NotificationSidebar = ({ isOpen, onClose }: Props) => {
   // Handler for "Clear All"
   const handleClearAll = async () => {
     setActionLoading(true);
-    const res = await deleteNotifactions();
+    await deleteNotifactions();
     if (!error) {
       setNotifications([]);
     } else {
       console.error("Error clearing notifications:", error);
     }
     setActionLoading(false);
+  };
+
+  // Helper to format ISO date string to a readable time/date
+  const formatTime = (dateString: string) => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   };
 
   return (
@@ -95,7 +111,7 @@ const NotificationSidebar = ({ isOpen, onClose }: Props) => {
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-white/10 rounded-full transition-colors text-white"
+            className="p-2 hover:bg-white/10 rounded-full transition-colors text-white cursor-pointer"
           >
             <X size={24} />
           </button>
@@ -111,34 +127,62 @@ const NotificationSidebar = ({ isOpen, onClose }: Props) => {
               </p>
             </div>
           ) : notifications.length > 0 ? (
-            notifications.map((notif, index) => (
-              <div
-                key={notif.id || index}
-                className={`p-5 border-b border-gray-50 flex gap-4 hover:bg-gray-50 transition-colors relative ${!notif.isRead ? "bg-[#00ed64]/5" : ""}`}
-              >
-                {!notif.isRead && (
-                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#00ed64]" />
-                )}
+            notifications.map((notif, index) => {
+              const isCheckedOut = notif.status === "CheckedOut";
+              return (
+                <div
+                  key={notif.id || index}
+                  className={`p-5 border-b border-gray-50 flex gap-4 hover:bg-gray-50 transition-colors relative ${
+                    !notif.isRead ? "bg-[#00ed64]/5" : ""
+                  }`}
+                >
+                  {!notif.isRead && (
+                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#00ed64]" />
+                  )}
 
-                <div className="shrink-0 p-2.5 bg-gray-50 border border-gray-200 rounded-xl h-fit">
-                  <UserCheck size={20} className="text-[#00684a]" />
-                </div>
-
-                <div className="flex-1">
-                  <div className="flex justify-between items-start">
-                    <p className="text-sm font-semibold text-[#001e2b]">
-                      {notif.visitorName}
-                    </p>
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tight flex items-center gap-1">
-                      <Clock size={10} /> {notif.time}
-                    </span>
+                  <div
+                    className={`shrink-0 p-2.5 border rounded-xl h-fit ${
+                      isCheckedOut
+                        ? "bg-amber-50 border-amber-200 text-amber-700"
+                        : "bg-emerald-50 border-emerald-200 text-emerald-700"
+                    }`}
+                  >
+                    {isCheckedOut ? (
+                      <UserX size={20} />
+                    ) : (
+                      <UserCheck size={20} />
+                    )}
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Successfully completed check-in at the front desk.
-                  </p>
+
+                  <div className="flex-1">
+                    <div className="flex justify-between items-start">
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-semibold text-[#001e2b]">
+                          {notif.visitorName}
+                        </p>
+                        <span
+                          className={`text-[9px] font-bold px-2 py-0.5 rounded uppercase tracking-wider ${
+                            isCheckedOut
+                              ? "bg-amber-100 text-amber-800"
+                              : "bg-emerald-100 text-emerald-800"
+                          }`}
+                        >
+                          {notif.status}
+                        </span>
+                      </div>
+                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tight flex items-center gap-1">
+                        <Clock size={10} /> {formatTime(notif.createdAt)}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {isCheckedOut
+                        ? "Successfully processed checkout at exit gate."
+                        : "Successfully completed check-in at the front desk."}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           ) : (
             <div className="flex flex-col items-center justify-center h-full text-gray-400 space-y-2">
               <BellRing size={48} className="opacity-10" />
@@ -152,14 +196,14 @@ const NotificationSidebar = ({ isOpen, onClose }: Props) => {
           <button
             disabled={actionLoading || notifications.length === 0}
             onClick={handleClearAll}
-            className="flex-1 bg-white border border-gray-200 text-[#001e2b] text-xs font-bold py-3 rounded-xl hover:bg-gray-100 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+            className="flex-1 bg-white border border-gray-200 text-[#001e2b] text-xs font-bold py-3 rounded-xl hover:bg-gray-100 transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
           >
             <Trash2 size={14} /> Clear All
           </button>
           <button
             disabled={actionLoading || notifications.length === 0}
             onClick={handleMarkAllRead}
-            className="flex-1 bg-[#00ed64] text-[#001e2b] text-xs font-bold py-3 rounded-xl hover:shadow-lg hover:shadow-[#00ed64]/20 transition-all disabled:opacity-50"
+            className="flex-1 bg-[#00ed64] text-[#001e2b] text-xs font-bold py-3 rounded-xl hover:shadow-lg hover:shadow-[#00ed64]/20 transition-all disabled:opacity-50 cursor-pointer"
           >
             {actionLoading ? "Processing..." : "Mark all as read"}
           </button>

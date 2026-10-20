@@ -48,9 +48,24 @@ export interface CheckIn {
   reasonForVisit: ReasonForVisit;
   gender: Gender;
 }
+export interface PaginatedObject {
+  sortOrder?: string;
+  Page?: number;
+  SortBy?: string; 
+  Size?: number;
+}
 export const visitorService=  {
-    async getAll() : Promise<Visitor[]>{
-        return apiClient.get("/api/visitor");
+    async getAll(query?:PaginatedObject) : Promise<Visitor[]>{
+        const params = new URLSearchParams();
+
+        if (query?.sortOrder) params.append("sortOrder", query.sortOrder);
+        if (query?.Page) params.append("page", query.Page.toString());
+        if (query?.Size) params.append("size", query.Size.toString());
+
+        const queryString = params.toString();
+        return apiClient.get(
+          `/api/visitor${queryString ? `?${queryString}` : ""}`,
+        );
     },
     async getOne(visitorId:string) : Promise<Visitor>{
         return apiClient.get(`/api/room/${visitorId}`);
@@ -59,6 +74,12 @@ export const visitorService=  {
         return apiClient.post(`/api/visitor/check-in?RoomId=${roomId}`,data);
     },
     async checkOut(data:CheckOut):Promise<void>{
-        return apiClient.patch("/api/visitor/check-out",data)
+      try {
+        // apiClient.post will throw an Error if response.ok is false (e.g. 400 or 500)
+        return await apiClient.post("/api/visitor/checkout", data);
+      } catch (err: any) {
+        // Re-throw so the frontend catch block can read the error message
+        throw err;
+      }
     },
 }

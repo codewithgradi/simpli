@@ -7,7 +7,7 @@ export default function ScannerComponent({ onResult }: { onResult: (data: string
   useEffect(() => {
     const scanner = new Html5QrcodeScanner("reader", {
       fps: 20,
-      qrbox: { width: 280, height: 280 },
+      qrbox: { width: 480, height: 480 },
       aspectRatio: 1.0,
       showTorchButtonIfSupported: true,
     }, false);
@@ -15,9 +15,8 @@ export default function ScannerComponent({ onResult }: { onResult: (data: string
     scanner.render(
       (decodedText) => {
         onResult(decodedText);
-        // We don't clear here immediately to allow the parent to handle the "Success" state
       },
-      () => { /* silent error for frame-by-frame scanning */ }
+      () => {  }
     );
 
     return () => {

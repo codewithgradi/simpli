@@ -1,3 +1,4 @@
+import { PaginatedObject } from "@/services/notificationService";
 import { PostRoom, roomService, UpdateRoom } from "@/services/roomService";
 import { useState } from "react";
 
@@ -6,11 +7,11 @@ export function useRoom() {
   const [loading, setLoading] = useState(false);
 
   // in your useRoom hook
-const getRooms = async (companyId: string) => {
+const getRooms = async (companyId: string, query?:PaginatedObject) => {
   setLoading(true);
   setError(null);
   try {
-    const rooms = await roomService.getAll(companyId);
+    const rooms = await roomService.getAll(companyId, query);
     return rooms;
   } catch (err: any) {
     setError(err.message || "Could not get rooms");
@@ -19,11 +20,11 @@ const getRooms = async (companyId: string) => {
     setLoading(false);
   }
 };
-const getRoomsPrivate = async ()=>{
+const getRoomsPrivate = async (query?:PaginatedObject)=>{
   setLoading(true);
   setError(null);
   try {
-    const rooms = await roomService.getAllPrivate();
+    const rooms = await roomService.getAllPrivate(query);
     return rooms;
   } catch (err: any) {
     setError(err.message || "Could not get rooms");

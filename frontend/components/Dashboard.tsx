@@ -22,8 +22,9 @@ import NotificationCenter from "./SystemNotification";
 import DashboardSkeleton from "./DashboardSkeleton";
 import RoomManagement from "./ViewRooms";
 import { useRouter } from "next/navigation";
-import Notification from "./Notification";
+import Notification from "./Notification"; // Toast banner component
 import { useAuthService } from "@/hooks/useAuthService";
+import NotificationToast from "./NotificationLogoutToast";
 
 export default function HotelDashboard() {
   const [activeTab, setActiveTab] = useState("Dashboard");
@@ -67,7 +68,7 @@ export default function HotelDashboard() {
 
   if (!isloggedIn)
     return (
-      <Notification
+      <NotificationToast
         onClose={() => setIsLoggedIn(false)}
         message="Logged out successfully"
         type="positive"

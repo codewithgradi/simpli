@@ -6,7 +6,7 @@ import { Eye, EyeOff, ShieldCheck, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
-import Notification from "./Notification";
+import Notification from "./NotificationLogoutToast";
 import { useAuthService } from "@/hooks/useAuthService";
 import { LoginResponse } from "@/services/authService";
 
@@ -147,6 +147,7 @@ const BusinessLogForm = () => {
       setIsSubmitted(true);
 
       localStorage.setItem("accessToken", data.accessToken);
+      localStorage.setItem("refreshToken", data.refreshToken); 
 
       const expiresInDays = data.expiresIn ? data.expiresIn / 86400 : 1;
       Cookies.set("jwt", data.accessToken, { expires: expiresInDays });

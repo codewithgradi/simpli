@@ -1,16 +1,16 @@
 "use client"
-import { notificationService } from "@/services/notificationService";
+import { notificationService, PaginatedObject } from "@/services/notificationService";
 import { useState } from "react";
 
 export function useNotification (){
     const [error, setError] = useState<string | null>();
     const [loading, setLoading] = useState(false);
 
-    const getAll = async () => {
+    const getAll = async (query?:PaginatedObject) => {
         setLoading(true);
         setError(null);
         try {
-          var res = await notificationService.getAll();
+          var res = await notificationService.getAll(query);
           return res;
         } catch (err: any) {
           setError(err.message || "Could not get notifications");

@@ -1,6 +1,15 @@
 "use client";
-import React, { useEffect, useState } from "react";
-import { Search, Filter, MoreVertical, Download, Clock, X } from "lucide-react";
+import React, { useEffect, useState, useCallback } from "react";
+import {
+  Search,
+  Filter,
+  MoreVertical,
+  Download,
+  Clock,
+  X,
+  ArrowUpDown,
+  RefreshCw,
+} from "lucide-react";
 import ProfileSkeleton from "./ProfileSkeleton";
 import { NoVisitors } from "./NoVisitors";
 import { useVisitor } from "@/hooks/useVisitor"; // Adjust import path if necessary
@@ -48,29 +57,45 @@ const VisitorView = () => {
   // Consume hook methods and states
   const { getVisitors, loading, error } = useVisitor();
 
+  // Pagination & Sorting States (Defaulting sortOrder to "desc" for Latest -> Oldest)
+  const [page, setPage] = useState<number>(1);
+  const [size, setSize] = useState<number>(10);
+  const [sortOrder, setSortOrder] = useState<string>("desc");
+
   // Filtering States
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<VisitorStatus | "all">(
     "all",
   );
 
-  const fetchVisitorsData = async () => {
-    const result = await getVisitors();
-    if (result) {
-      const actualData = Array.isArray(result)
-        ? result
-        : (result as any).data || [];
-      setVisitors(Array.isArray(actualData) ? actualData : []);
-    } else if (error) {
-      console.error("Failed to fetch visitors:", error);
-    }
-  };
+ const fetchVisitorsData = useCallback(async () => {
+   const result = await getVisitors({
+     Page: page,
+     Size: size,
+     sortOrder: sortOrder,
+     SortBy: "checkInTime", // Explicitly tell the backend to sort by check-in time
+   });
 
+   if (result) {
+     const actualData = Array.isArray(result)
+       ? result
+       : (result as any).data || [];
+     setVisitors(Array.isArray(actualData) ? actualData : []);
+   } else if (error) {
+     console.error("Failed to fetch visitors:", error);
+   }
+ }, [page, size, sortOrder]);
   useEffect(() => {
     fetchVisitorsData();
-  }, []);
+  }, [fetchVisitorsData]);
 
-  // Filter Logic
+  // Toggle Sort Order
+  const toggleSort = () => {
+    setSortOrder((prev) => (prev === "desc" ? "asc" : "desc"));
+    setPage(1); // Reset to page 1 on sort change
+  };
+
+  // Filter Logic (Client-side filtering for search & status)
   const filteredVisitors = visitorsData.filter((visitor) => {
     const fullName = `${visitor.firstName} ${visitor.lastName}`.toLowerCase();
     const matchesSearch = fullName.includes(searchQuery.toLowerCase());
@@ -86,7 +111,7 @@ const VisitorView = () => {
 
   return (
     <>
-      {visitorsData.length > 0 ? (
+      {visitorsData.length > 0 || searchQuery ? (
         <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
           {/* Header & Filter Section */}
           <div className="p-6 border-b border-gray-100 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
@@ -121,28 +146,46 @@ const VisitorView = () => {
                 )}
               </div>
 
-              {/* Status Filter Dropdown */}
-              {/* <div className="relative">
-                <select
-                  value={statusFilter}
-                  onChange={(e) =>
-                    setStatusFilter(e.target.value as VisitorStatus | "all")
-                  }
-                  className="appearance-none pl-4 pr-10 py-2 border border-gray-300 rounded text-sm outline-none focus:border-[#00ed64] bg-white cursor-pointer"
-                >
-                  <option value="all">All Status</option>
-                  <option value={VisitorStatus.CHECKED_IN}>Checked In</option>
-                  <option value={VisitorStatus.CHECKED_OUT}>Checked Out</option>
-                </select>
-                <Filter
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
-                  size={14}
-                />
-              </div> */}
+              {/* Sort Order Button */}
+              <button
+                onClick={toggleSort}
+                className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors shadow-sm"
+              >
+                <ArrowUpDown size={14} className="text-gray-500" />
+                <span>
+                  Sort:{" "}
+                  {sortOrder === "desc"
+                    ? "Latest to Oldest"
+                    : "Oldest to Latest"}
+                </span>
+              </button>
 
-              {/* <button className="flex items-center gap-2 bg-[#00ed64] text-[#001e2b] font-bold py-2 px-4 rounded text-sm hover:bg-[#00c654] transition-colors shadow-sm">
-                <Download size={16} /> Export
-              </button> */}
+              {/* Page Size Selector */}
+              <select
+                value={size}
+                onChange={(e) => {
+                  setSize(Number(e.target.value));
+                  setPage(1);
+                }}
+                className="px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded outline-none focus:border-[#00ed64] cursor-pointer shadow-sm"
+              >
+                <option value={5}>5 per page</option>
+                <option value={10}>10 per page</option>
+                <option value={20}>20 per page</option>
+              </select>
+
+              {/* Refresh Button */}
+              <button
+                onClick={fetchVisitorsData}
+                disabled={loading}
+                title="Refresh table"
+                className="p-2 text-gray-600 bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-40 transition-colors shadow-sm cursor-pointer"
+              >
+                <RefreshCw
+                  size={14}
+                  className={loading ? "animate-spin" : ""}
+                />
+              </button>
             </div>
           </div>
 
@@ -195,20 +238,12 @@ const VisitorView = () => {
                           {v.status ? v.status.replace("-", " ") : "Unknown"}
                         </span>
                       </td>
-                      {/* <td className="px-6 py-4 text-right">
-                        <button className="p-1 hover:bg-gray-200 rounded-full transition-colors">
-                          <MoreVertical
-                            size={16}
-                            className="text-gray-400 cursor-pointer"
-                          />
-                        </button>
-                      </td> */}
                     </tr>
                   ))
                 ) : (
                   <tr>
                     <td
-                      colSpan={5}
+                      colSpan={4}
                       className="px-6 py-12 text-center text-gray-500 italic"
                     >
                       No visitors match your current filters.
@@ -217,6 +252,31 @@ const VisitorView = () => {
                 )}
               </tbody>
             </table>
+          </div>
+
+          {/* Pagination Footer */}
+          <div className="p-4 flex items-center justify-between border-t border-gray-100 bg-gray-50/50">
+            <span className="text-xs text-gray-500">
+              Current Page: <strong className="text-gray-700">{page}</strong>
+            </span>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setPage((p) => Math.max(p - 1, 1))}
+                disabled={page === 1 || loading}
+                className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed shadow-sm transition-colors"
+              >
+                Previous
+              </button>
+
+              <button
+                onClick={() => setPage((p) => p + 1)}
+                disabled={visitorsData.length < size || loading}
+                className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed shadow-sm transition-colors"
+              >
+                Next
+              </button>
+            </div>
           </div>
         </div>
       ) : (

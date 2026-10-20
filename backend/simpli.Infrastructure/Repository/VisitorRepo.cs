@@ -98,62 +98,59 @@ public class VisitorRepo : IVisitorRepo
     public async Task<List<Visitor>> GetAllVisitors(GetVisitorsQueryParameters query, int companyID)
     {
         IQueryable<Visitor> visitors = _context.Visitors
-        .Where(x => x.CompanyId == companyID);
+            .Where(x => x.CompanyId == companyID);
 
         if (!string.IsNullOrEmpty(query.SearchItem))
         {
-            visitors = visitors.Where(
-              v => v.FirstName.ToString()
-            .Contains(query.SearchItem.ToString()));
+            visitors = visitors.Where(v => v.FirstName.Contains(query.SearchItem));
         }
+
         if (!string.IsNullOrEmpty(query.Name))
         {
-            string searchItem = query.Name.ToString();
+            string searchItem = query.Name;
             visitors = visitors.Where(v =>
-            v.FirstName.ToString().Contains(searchItem)
-            || v.LastName.ToString().Contains(searchItem));
+                v.FirstName.Contains(searchItem) ||
+                v.LastName.Contains(searchItem));
         }
+
         if (query.Gender != null)
         {
             visitors = visitors.Where(v => v.Gender == query.Gender);
         }
+
         if (query.CheckedIn != null)
         {
             visitors = visitors.Where(v => v.Status == query.CheckedIn);
         }
 
+        // Determine sort direction safely
+        bool isDescending = string.IsNullOrEmpty(query.SortOrder) ||
+                            query.SortOrder.Equals("desc", StringComparison.OrdinalIgnoreCase);
+
         if (!string.IsNullOrEmpty(query.SortBy))
         {
-            bool isDescending = query.SortOrder.Equals("desc", StringComparison.OrdinalIgnoreCase);
             visitors = query.SortBy.ToLower() switch
             {
-                "firstname" => isDescending ?
-                 visitors.OrderByDescending(v => v.FirstName)
-                 : visitors.OrderBy(v => v.FirstName),
-
-                "lastname" => isDescending ?
-                visitors.OrderByDescending(v => v.LastName)
-                : visitors.OrderBy(v => v.LastName),
-
-                "idnumber" => isDescending ?
-                visitors.OrderByDescending(v => v.IdNumber)
-                : visitors.OrderBy(v => v.IdNumber),
-
-                _ => visitors.OrderBy(v => v.Id)
+                "firstname" => isDescending ? visitors.OrderByDescending(v => v.FirstName) : visitors.OrderBy(v => v.FirstName),
+                "lastname" => isDescending ? visitors.OrderByDescending(v => v.LastName) : visitors.OrderBy(v => v.LastName),
+                "idnumber" => isDescending ? visitors.OrderByDescending(v => v.IdNumber) : visitors.OrderBy(v => v.IdNumber),
+                "checkintime" => isDescending ? visitors.OrderByDescending(v => v.CheckInTime) : visitors.OrderBy(v => v.CheckInTime),
+                _ => isDescending ? visitors.OrderByDescending(v => v.Id) : visitors.OrderBy(v => v.Id)
             };
         }
         else
         {
-            visitors = visitors.OrderBy(v => v.Id);
+            // Default sort by CheckInTime (latest to oldest / oldest to latest)
+            visitors = isDescending
+                ? visitors.OrderByDescending(v => v.CheckInTime)
+                : visitors.OrderBy(v => v.CheckInTime);
         }
 
-
         return await visitors
-        .Skip(query.Size * (query.Page - 1))
-        .Take(query.Size)
-        .ToListAsync();
+            .Skip(query.Size * (query.Page - 1))
+            .Take(query.Size)
+            .ToListAsync();
     }
-
     public async Task<List<Visitor>> GetAllVisitorsStats(int companyID)
     {
         return await _context.Visitors.Where(x=>x.CompanyId == companyID).ToListAsync();

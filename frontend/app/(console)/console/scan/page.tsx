@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, useState, ReactNode } from "react";
+import { useEffect, useState, useRef, ReactNode } from "react";
 import {
   ShieldCheck,
   Camera,
@@ -9,13 +9,10 @@ import {
   AlertCircle,
   Loader2,
   Bot,
-  Mail,
   QrCode,
   Send,
-  RefreshCw,
   LogOut,
   MapPin,
-  Building2,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -31,7 +28,7 @@ const ScannerComponent = dynamic(() => import("@/components/GuardScanner"), {
   ssr: false,
 });
 
-type TabType = "scanner" | "chat" | "emails";
+type TabType = "scanner" | "chat";
 
 export default function GuardExitPage() {
   const [activeTab, setActiveTab] = useState<TabType>("scanner");
@@ -39,7 +36,6 @@ export default function GuardExitPage() {
   // Hooks Initialization
   const { checkout } = useVisitor();
   const { chat, loading: chatLoading } = useChat();
-  const { getAllEmails, loading: emailsLoading } = useSystemService();
   const { getCompany, loading: companyLoading } = useCompany();
 
   // Scanner & Terminal State
@@ -50,6 +46,9 @@ export default function GuardExitPage() {
   const [scanMessage, setScanMessage] = useState(
     "Scan visitor pass to authorize exit",
   );
+
+  // Scanning lock ref to prevent rapid overlapping camera triggers
+  const isScanningRef = useRef(false);
 
   // Chat & Company State
   const [companyId, setCompanyId] = useState<string | number>("");
@@ -63,16 +62,18 @@ export default function GuardExitPage() {
     },
   ]);
 
-  // System Logs State
-  const [emails, setEmails] = useState<any[]>([]);
+  // Stabilize getCompany reference to prevent infinite loops
+  const getCompanyRef = useRef(getCompany);
+  useEffect(() => {
+    getCompanyRef.current = getCompany;
+  }, [getCompany]);
 
-  // 1. Fetch Company on Mount using useCompany
+  // 1. Fetch Company on Mount using stable ref (Runs ONLY ONCE)
   useEffect(() => {
     const fetchCompanyData = async () => {
       try {
-        const res = await getCompany();
-        const cid =
-           res?.id || "";
+        const res = await getCompanyRef.current();
+        const cid = res?.id || "";
         if (cid) {
           setCompanyId(cid);
         }
@@ -87,15 +88,18 @@ export default function GuardExitPage() {
   const getErrorMessage = (err: any, fallback: string): string => {
     if (!err) return fallback;
     if (typeof err === "string") return err;
-    const target = err.response?.data || err.data || err;
-    if (typeof target === "string") return target;
-    return (
-      target?.detail ||
-      target?.title ||
-      target?.message ||
-      err.message ||
-      fallback
-    );
+
+    const message = err.message || "";
+    if (message) {
+      try {
+        const parsed = JSON.parse(message);
+        return parsed.detail || parsed.title || parsed.message || message;
+      } catch {
+        return message;
+      }
+    }
+
+    return fallback;
   };
 
   // Helper to format AI response text (handles newlines, bolding, and bullet points)
@@ -140,7 +144,8 @@ export default function GuardExitPage() {
 
   // Scanner Action
   const handleScan = async (decodedText: string) => {
-    if (status === "loading" || status === "success") return;
+    if (isScanningRef.current || status === "loading" || status === "success")
+      return;
 
     if (!roomId.trim()) {
       setStatus("error");
@@ -149,12 +154,16 @@ export default function GuardExitPage() {
       return;
     }
 
+    const cleanPassCode = decodedText.trim();
+    if (!cleanPassCode) return;
+
+    isScanningRef.current = true;
     setStatus("loading");
     setScanMessage("Verifying visitor pass...");
 
     try {
       const payload: CheckOut = {
-        passCode: decodedText,
+        passCode: cleanPassCode,
         roomId: roomId.trim(),
       };
 
@@ -169,6 +178,7 @@ export default function GuardExitPage() {
       setTimeout(() => {
         setStatus("idle");
         setScanMessage("Scan visitor pass to authorize exit");
+        isScanningRef.current = false;
       }, 4000);
     }
   };
@@ -235,11 +245,8 @@ export default function GuardExitPage() {
     }
   };
 
-  // Fetch Emails/Logs Action
-  // const handleFetchEmails = async () => {
-  //   const data = await getAllEmails();
-  //   if (data) setEmails(Array.isArray(data) ? data : []);
-  // };
+  // Determine Online/Offline Status for Support
+  const isOnline = Boolean(companyId) && !companyLoading;
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-800 flex flex-col font-sans">
@@ -302,21 +309,6 @@ export default function GuardExitPage() {
             <Bot size={18} />
             <span>Guard Support</span>
           </button>
-
-          {/* <button
-            onClick={() => {
-              setActiveTab("emails");
-              if (emails.length === 0) handleFetchEmails();
-            }}
-            className={`flex-1 md:flex-initial flex items-center justify-center md:justify-start gap-3 p-3 rounded-xl font-medium text-sm transition-all active:scale-[0.98] ${
-              activeTab === "emails"
-                ? "bg-emerald-600 text-white font-semibold shadow-md shadow-emerald-600/20"
-                : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-            }`}
-          >
-            <Mail size={18} />
-            <span>Logs & Mail</span>
-          </button> */}
         </nav>
 
         {/* Content Panel */}
@@ -406,7 +398,7 @@ export default function GuardExitPage() {
           {/* TAB 2: AI GUARD ASSISTANT */}
           {activeTab === "chat" && (
             <div className="flex-1 flex flex-col h-full">
-              {/* Header Info */}
+              {/* Header Info with Online/Offline Status */}
               <div className="pb-3 mb-4 border-b border-slate-200 flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
                   <Bot size={20} className="text-emerald-600" />
@@ -416,12 +408,21 @@ export default function GuardExitPage() {
                 </div>
 
                 <div className="flex items-center gap-2 bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-lg text-xs">
-                  <Building2 size={14} className="text-emerald-600" />
-                  <span className="text-slate-500 font-semibold uppercase">
-                    Company:
-                  </span>
-                  <span className="font-bold text-slate-800">
-                    {companyLoading ? "Loading..." : companyId || "Not Found"}
+                  <span
+                    className={`w-2 h-2 rounded-full ${
+                      companyLoading
+                        ? "bg-amber-400 animate-ping"
+                        : isOnline
+                          ? "bg-emerald-500"
+                          : "bg-red-400"
+                    }`}
+                  ></span>
+                  <span className="font-bold text-slate-700">
+                    {companyLoading
+                      ? "Connecting..."
+                      : isOnline
+                        ? "Online"
+                        : "Offline"}
                   </span>
                 </div>
               </div>
@@ -481,60 +482,6 @@ export default function GuardExitPage() {
               </form>
             </div>
           )}
-
-          {/* TAB 3: SYSTEM LOGS / MAIL
-          {activeTab === "emails" && (
-            <div className="flex-1 flex flex-col h-full">
-              <div className="pb-3 mb-4 border-b border-slate-200 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Mail size={20} className="text-emerald-600" />
-                  <h2 className="font-bold text-slate-800 text-sm">
-                    System Logs & Messages
-                  </h2>
-                </div>
-                <button
-                  onClick={handleFetchEmails}
-                  disabled={emailsLoading}
-                  className="p-2 bg-slate-100 border border-slate-200 rounded-lg text-slate-600 hover:text-emerald-600 hover:bg-slate-200 transition-colors"
-                >
-                  <RefreshCw
-                    size={16}
-                    className={emailsLoading ? "animate-spin" : ""}
-                  />
-                </button>
-              </div>
-
-              {emailsLoading ? (
-                <div className="flex-1 flex items-center justify-center">
-                  <Loader2
-                    size={28}
-                    className="animate-spin text-emerald-600"
-                  />
-                </div>
-              ) : emails.length === 0 ? (
-                <div className="flex-1 flex flex-col items-center justify-center text-slate-400 py-12">
-                  <Mail size={36} className="mb-2 opacity-40" />
-                  <p className="text-xs font-medium">No dispatch logs found.</p>
-                </div>
-              ) : (
-                <div className="overflow-y-auto max-h-[400px] space-y-2.5 pr-1">
-                  {emails.map((item, index) => (
-                    <div
-                      key={index}
-                      className="bg-slate-50 border border-slate-200 p-4 rounded-xl text-xs space-y-1 hover:border-slate-300 transition-colors"
-                    >
-                      <p className="font-bold text-emerald-700">
-                        {item.subject || "System Activity Log"}
-                      </p>
-                      <p className="text-slate-600">
-                        {item.body || JSON.stringify(item)}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )} */}
         </section>
       </div>
 
