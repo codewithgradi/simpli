@@ -17,7 +17,7 @@ const BusinessLogForm = () => {
   const [form, setForm] = useState({ email: "", password: "" });
   const [isSubmitted, setIsSubmitted] = useState(false);
 
-  // Use our newly created custom auth service hook
+  // Use our custom auth service hook
   const { login, loading, error: authError } = useAuthService();
 
   const [showNotification, setShowNotification] = useState<{
@@ -37,8 +37,56 @@ const BusinessLogForm = () => {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
+  // Smart error parser that translates backend codes into friendly user messages
+  const getFriendlyErrorMessage = (err: any): string => {
+    if (!err) return "Invalid email or password. Please try again.";
+
+    // Extract raw error string or object data
+    let errorString = "";
+    if (typeof err === "string") {
+      errorString = err;
+    } else {
+      const target = err.response?.data || err.data || err;
+      if (typeof target === "string") {
+        errorString = target;
+      } else {
+        errorString =
+          target?.detail ||
+          target?.title ||
+          target?.message ||
+          JSON.stringify(target);
+      }
+    }
+
+    // Translate backend status / details to user-friendly messages
+    const lowerError = errorString.toLowerCase();
+
+    if (lowerError.includes("lockedout") || lowerError.includes("locked")) {
+      return "Your account has been temporarily locked due to multiple failed attempts. Please try again later or reset your password.";
+    }
+
+    if (
+      lowerError.includes("unauthorized") ||
+      lowerError.includes("invalid") ||
+      lowerError.includes("bad request") ||
+      lowerError.includes("401")
+    ) {
+      return "Incorrect email or password. Please check your credentials and try again.";
+    }
+
+    if (lowerError.includes("not found") || lowerError.includes("404")) {
+      return "No account found with this email address.";
+    }
+
+    // Fallback if it's some other descriptive message, but ensure it's not a raw JSON blob
+    if (errorString.startsWith("{") || errorString.startsWith("[")) {
+      return "Invalid email or password. Please try again.";
+    }
+
+    return errorString;
+  };
+
   useEffect(() => {
-    // 1. Look for the data we saved during Sign Up
     const pendingData = sessionStorage.getItem("pendingLogin");
 
     if (pendingData) {
@@ -63,65 +111,62 @@ const BusinessLogForm = () => {
     }
   }, []);
 
- const handleSubmit = async (e: React.FormEvent) => {
-   e.preventDefault();
-   let validationErrors: Partial<Record<string, string>> = {};
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    let validationErrors: Partial<Record<string, string>> = {};
 
-   if (!form.email.trim())
-     validationErrors.email = "Business email is required";
-   if (!form.password.trim())
-     validationErrors.password = "Password is required";
-   setErrors(validationErrors);
+    if (!form.email.trim())
+      validationErrors.email = "Business email is required";
+    if (!form.password.trim())
+      validationErrors.password = "Password is required";
+    setErrors(validationErrors);
 
-   const errorMessages = Object.values(validationErrors);
+    const errorMessages = Object.values(validationErrors);
 
-   if (errorMessages.length > 0) {
-     setShowNotification({
-       show: true,
-       msg: errorMessages[0] as string,
-       type: "negative",
-     });
-     return;
-   }
+    if (errorMessages.length > 0) {
+      setShowNotification({
+        show: true,
+        msg: errorMessages[0] as string,
+        type: "negative",
+      });
+      return;
+    }
 
-   try {
-     // login() returns LoginResponse typed data
-     const data = (await login(form)) as LoginResponse | null;
+    try {
+      const data = (await login(form)) as LoginResponse | null;
 
-     if (!data || !data.accessToken) {
-       setShowNotification({
-         show: true,
-         msg: authError || "Invalid email or password",
-         type: "negative",
-       });
-       return;
-     }
+      if (!data || !data.accessToken) {
+        setShowNotification({
+          show: true,
+          msg: getFriendlyErrorMessage(authError),
+          type: "negative",
+        });
+        return;
+      }
 
-     setIsSubmitted(true);
+      setIsSubmitted(true);
 
-     // 1. Save to localStorage so your apiClient Bearer headers pick it up
-     localStorage.setItem("accessToken", data.accessToken);
+      localStorage.setItem("accessToken", data.accessToken);
 
-     // 2. Save tokens to cookies for middleware / server-side usage
-     // Convert expiresIn (seconds) to days for js-cookie expiration calculation
-     const expiresInDays = data.expiresIn ? data.expiresIn / 86400 : 1;
-     Cookies.set("jwt", data.accessToken, { expires: expiresInDays });
+      const expiresInDays = data.expiresIn ? data.expiresIn / 86400 : 1;
+      Cookies.set("jwt", data.accessToken, { expires: expiresInDays });
 
-     if (data.refreshToken) {
-       Cookies.set("refreshToken", data.refreshToken, { expires: 7 });
-     }
+      if (data.refreshToken) {
+        Cookies.set("refreshToken", data.refreshToken, { expires: 7 });
+      }
 
-     router.push("/console");
-     router.refresh();
-   } catch (err: any) {
-     setShowNotification({
-       show: true,
-       msg: err.message || "Connection refused. Is the server running?",
-       type: "negative",
-     });
-     console.log("Connection error:", err);
-   }
- };
+      router.push("/console");
+      router.refresh();
+    } catch (err: any) {
+      setShowNotification({
+        show: true,
+        msg: getFriendlyErrorMessage(err),
+        type: "negative",
+      });
+      console.log("Connection error:", err);
+    }
+  };
+
   return (
     <div className="min-h-screen w-full flex bg-white font-sans selection:bg-[#00ed64] selection:text-[#001e2b]">
       {showNotification.show && (
@@ -134,7 +179,7 @@ const BusinessLogForm = () => {
         />
       )}
 
-      {/* Left Side: The Form (Clean & Focused) */}
+      {/* Left Side: The Form */}
       <div className="w-full lg:w-112.5 flex flex-col p-8 md:p-16">
         <Link href={"/"} className="mb-12 flex items-center gap-2">
           <div className="w-8 h-8 bg-[#00ed64] rounded-lg flex items-center justify-center">

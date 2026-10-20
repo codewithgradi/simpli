@@ -122,7 +122,7 @@ const VisitorView = () => {
               </div>
 
               {/* Status Filter Dropdown */}
-              <div className="relative">
+              {/* <div className="relative">
                 <select
                   value={statusFilter}
                   onChange={(e) =>
@@ -138,11 +138,11 @@ const VisitorView = () => {
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
                   size={14}
                 />
-              </div>
+              </div> */}
 
-              <button className="flex items-center gap-2 bg-[#00ed64] text-[#001e2b] font-bold py-2 px-4 rounded text-sm hover:bg-[#00c654] transition-colors shadow-sm">
+              {/* <button className="flex items-center gap-2 bg-[#00ed64] text-[#001e2b] font-bold py-2 px-4 rounded text-sm hover:bg-[#00c654] transition-colors shadow-sm">
                 <Download size={16} /> Export
-              </button>
+              </button> */}
             </div>
           </div>
 
@@ -155,7 +155,6 @@ const VisitorView = () => {
                   <th className="px-6 py-3">Reason</th>
                   <th className="px-6 py-3">Check-In</th>
                   <th className="px-6 py-3">Status</th>
-                  <th className="px-6 py-3 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 text-sm">
@@ -196,14 +195,14 @@ const VisitorView = () => {
                           {v.status ? v.status.replace("-", " ") : "Unknown"}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-right">
+                      {/* <td className="px-6 py-4 text-right">
                         <button className="p-1 hover:bg-gray-200 rounded-full transition-colors">
                           <MoreVertical
                             size={16}
                             className="text-gray-400 cursor-pointer"
                           />
                         </button>
-                      </td>
+                      </td> */}
                     </tr>
                   ))
                 ) : (

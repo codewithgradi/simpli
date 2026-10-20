@@ -38,6 +38,7 @@ export interface CheckOut{
     roomId:string;
 }
 export interface CheckIn {
+  companyId:string;
   firstName: string;
   lastName: string;
   idNumber: string;
@@ -54,8 +55,8 @@ export const visitorService=  {
     async getOne(visitorId:string) : Promise<Visitor>{
         return apiClient.get(`/api/room/${visitorId}`);
     },
-    async checkIn(data:CheckIn):Promise<Visitor>{
-        return apiClient.put("/api/visitor/check-in",data);
+    async checkIn(data:CheckIn, roomId : string):Promise<Visitor>{
+        return apiClient.post(`/api/visitor/check-in?RoomId=${roomId}`,data);
     },
     async checkOut(data:CheckOut):Promise<void>{
         return apiClient.patch("/api/visitor/check-out",data)

@@ -7,8 +7,10 @@ public class CheckInDto
   private string _idNumber = "0000000000000";
   private string _phoneNumber = "0000000000";
   private string _email = "simpli.solutions.sys@gmail.com";
+  [Required(ErrorMessage ="company id required")]
+  public string CompanyId { get; set; }
+  [Required(ErrorMessage = "room id required")]
 
-  [Required(ErrorMessage = "First name is required")]
   public string FirstName { get; set; }
 
   [Required(ErrorMessage = "Last name is required")]

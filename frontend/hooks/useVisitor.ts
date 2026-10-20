@@ -35,11 +35,11 @@ export function useVisitor(){
         }
       };
     
-      const checkin = async (data: CheckIn) => {
+      const checkin = async (data: CheckIn, roomId:string) => {
         setLoading(true);
         setError(null);
         try {
-          var res = await visitorService.checkIn(data);
+          var res = await visitorService.checkIn(data, roomId);
           return res;
         } catch (err: any) {
           setError(err.message || "Could not check in");

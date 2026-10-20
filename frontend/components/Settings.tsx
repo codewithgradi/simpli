@@ -55,14 +55,14 @@ export const SettingsView = () => {
   }, []);
 
   const settingsItems: SettingItem[] = [
-    {
-      icon: Key,
-      title: "Password & Security",
-      desc: "Update your account password and security preferences.",
-      action: "Update",
-      enabled: true,
-      onclick: () => setShowPasswordModal(true),
-    },
+    // {
+    //   icon: Key,
+    //   title: "Password & Security",
+    //   desc: "Update your account password and security preferences.",
+    //   action: "Update",
+    //   enabled: true,
+    //   onclick: () => setShowPasswordModal(true),
+    // },
     {
       icon: Smartphone,
       title: "Feedback",

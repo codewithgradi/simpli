@@ -27,28 +27,28 @@ public class VisitorService
     VisitorAndQrCodeDataDto dataResult = await _visitorRepo.CheckIn(visitor, companyID, roomId);
 
 
-    try
-    {
-      await _emailService.SendVisitorEmailAsync(
-              visitor.Email!,
-              visitor.FirstName!,
-              visitorDto.RoomNumber!,
-              dataResult.QrCodeData);
-      var emailBody = new PostSystemEmailDto
-      {
-        CompanyId = companyID,
-        PassCode = dataResult.Visitor.PassCode,
-        RoomId = roomId,
-        VisitorFullName = dataResult.Visitor.FirstName!.ToString() + " " + dataResult.Visitor.LastName!.ToString()
-      };
+    // try
+    // {
+    //   await _emailService.SendVisitorEmailAsync(
+    //           visitor.Email!,
+    //           visitor.FirstName!,
+    //           visitorDto.RoomNumber!,
+    //           dataResult.QrCodeData);
+    //   var emailBody = new PostSystemEmailDto
+    //   {
+    //     CompanyId = companyID,
+    //     PassCode = dataResult.Visitor.PassCode,
+    //     RoomId = roomId,
+    //     VisitorFullName = dataResult.Visitor.FirstName!.ToString() + " " + dataResult.Visitor.LastName!.ToString()
+    //   };
       
-      await _systemEmailServive.Post(emailBody,companyID,roomId);
-    }
-    catch (Exception e)
-    {
-      _logger.LogError(e, "Failed to send check-in email to {Email}", visitor.Email);
-    }
-    ;
+    //   await _systemEmailServive.Post(emailBody,companyID,roomId);
+    // }
+    // catch (Exception e)
+    // {
+    //   _logger.LogError(e, "Failed to send check-in email to {Email}", visitor.Email);
+    // }
+    // ;
 
     return _mapper.MapToDto(dataResult.Visitor);
   }

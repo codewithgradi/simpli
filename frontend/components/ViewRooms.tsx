@@ -31,10 +31,10 @@ const RoomManagement = () => {
   });
 
   // Consume custom hook
-  const { getRooms, updateRoom, loading, error } = useRoom();
+  const {  updateRoom, loading, error, getRoomsPrivate } = useRoom();
 
   const fetchRoomsData = async () => {
-    const result = await getRooms();
+    const result = await getRoomsPrivate();
     if (result) {
       const actualData = Array.isArray(result)
         ? result
@@ -197,7 +197,7 @@ const RoomManagement = () => {
                       <td className="px-6 py-4">
                         <div className="flex flex-col items-center">
                           <span className="font-bold text-[#001e2b]">
-                            {room.numberTimesBooked || 0}
+                            {room.numberOfTimesBooked || 0}
                           </span>
                           <span className="text-[9px] text-gray-400 uppercase font-black">
                             Bookings

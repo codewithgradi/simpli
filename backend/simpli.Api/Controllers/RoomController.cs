@@ -20,7 +20,7 @@ namespace simpli.Api.Controllers
     {
       _roomService = services;
     }
-    [HttpGet("all")]
+    [HttpGet("public/all")]
     public async Task<IActionResult> GetAllRooms([FromQuery] QueryParameters query)
     {
       if (string.IsNullOrWhiteSpace(query.CmpId) || !int.TryParse(query.CmpId, out int companyId))
@@ -28,6 +28,17 @@ namespace simpli.Api.Controllers
         return BadRequest(new { message = "Invalid or missing company ID" });
       }
       if (companyId == null) return Unauthorized("Invalid Session.");
+      var rooms = await _roomService.GetAllRooms(companyId, query);
+      if (rooms == null) return BadRequest("Error");
+      return Ok(rooms);
+
+    }
+    [Authorize]
+    [HttpGet("company/all")]
+    public async Task<IActionResult> GetAllRoomsPrivate([FromQuery] QueryParameters query)
+    {
+      var companyId = Convert.ToInt32(User.FindFirst("CompanyId").Value);
+      if (companyId == null) return Unauthorized("No company in session.");
       var rooms = await _roomService.GetAllRooms(companyId, query);
       if (rooms == null) return BadRequest("Error");
       return Ok(rooms);

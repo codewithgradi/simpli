@@ -23,7 +23,6 @@ namespace simpli.Api.Controllers
       _notifService = notificationService;
     }
 
-    [Authorize]
     [HttpPost("check-in")]
     public async Task<IActionResult> CheckIn(
       [FromBody] CheckInDto inDto,
@@ -31,7 +30,7 @@ namespace simpli.Api.Controllers
     {
       if (!ModelState.IsValid) return BadRequest(ModelState);
 
-      var companyIdString = User.FindFirstValue("CompanyId");
+      var companyIdString = inDto.CompanyId;
       if (int.TryParse(companyIdString, out int companyId))
       {
         var visitor = await
@@ -57,7 +56,6 @@ namespace simpli.Api.Controllers
         return BadRequest("Could not check in");
       }
     }
-    [Authorize]
     [HttpPatch("check-out")]
     public async Task<IActionResult> CheckOut([FromBody] CheckOutDto outDto)
     {
@@ -73,6 +71,7 @@ namespace simpli.Api.Controllers
       if (visitor == null) return NotFound("Visitor not found.");
       return Ok(visitor);
     }
+    [Authorize]
     [HttpGet]
     public async Task<IActionResult> GettAllVisitors([FromQuery] GetVisitorsQueryParameters query)
     {

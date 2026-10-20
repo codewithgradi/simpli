@@ -6,11 +6,24 @@ export function useRoom() {
   const [loading, setLoading] = useState(false);
 
   // in your useRoom hook
-const getRooms = async (companyId?: string) => {
+const getRooms = async (companyId: string) => {
   setLoading(true);
   setError(null);
   try {
     const rooms = await roomService.getAll(companyId);
+    return rooms;
+  } catch (err: any) {
+    setError(err.message || "Could not get rooms");
+    return null;
+  } finally {
+    setLoading(false);
+  }
+};
+const getRoomsPrivate = async ()=>{
+  setLoading(true);
+  setError(null);
+  try {
+    const rooms = await roomService.getAllPrivate();
     return rooms;
   } catch (err: any) {
     setError(err.message || "Could not get rooms");
@@ -67,6 +80,7 @@ const getRooms = async (companyId?: string) => {
     getRooms,
     updateRoom,
     createRoom,
+    getRoomsPrivate,
     loading,
     error,
     getRoom,

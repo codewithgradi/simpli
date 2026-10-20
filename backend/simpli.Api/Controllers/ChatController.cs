@@ -27,6 +27,7 @@ public class ChatController:ControllerBase
         [FromBody] ChatRequestDto request, 
         CancellationToken cancellationToken)
     {
+        
         if (string.IsNullOrWhiteSpace(request.message))
         {
             return BadRequest(new ChatResponseDto(

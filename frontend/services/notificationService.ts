@@ -23,6 +23,6 @@ export const notificationService=  {
         return apiClient.patch("/api/notification/mark-read",{});
     },
     async delete():Promise<void>{
-        return apiClient.patch("/api/notification",{})
+        return apiClient.delete("/api/notification")
     },
 }

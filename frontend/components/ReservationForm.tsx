@@ -21,12 +21,13 @@ enum RoomType {
 
 interface Room {
   _id?: string;
-  id?: string;
-  companyId?: string;
+  id?: string | number;
+  ID?: string | number;
+  companyId?: string | number;
   roomNumber: string;
   floor: string | number;
   type: RoomType;
-  status: RoomStatus;
+  status: RoomStatus | string;
   numberOfTimesBooked?: number;
 }
 
@@ -40,6 +41,7 @@ export default function ReservationForm({ onSuccess }: ReservationFormProps) {
   const [form, setForm] = useState<CheckIn>({
     firstName: "",
     lastName: "",
+    companyId: "",
     phoneNumber: "",
     idNumber: "",
     gender: Gender.Male,
@@ -48,6 +50,7 @@ export default function ReservationForm({ onSuccess }: ReservationFormProps) {
     email: "",
   });
 
+  // Skip toggles
   const [skipPhone, setSkipPhone] = useState(false);
   const [skipEmail, setSkipEmail] = useState(false);
   const [skipId, setSkipId] = useState(false);
@@ -59,6 +62,7 @@ export default function ReservationForm({ onSuccess }: ReservationFormProps) {
   }>({ show: false, msg: "", type: "positive" });
 
   const [isSubmitted, setSubmitted] = useState(false);
+  const [checkInResponse, setCheckInResponse] = useState<any>(null);
   const [rooms, setRooms] = useState<Room[]>([]);
   const [loadingRooms, setLoadingRooms] = useState(false);
 
@@ -75,7 +79,6 @@ export default function ReservationForm({ onSuccess }: ReservationFormProps) {
 
       setLoadingRooms(true);
       try {
-        // Pass bid into getRooms so the public endpoint filters by company
         const result = await getRooms(bid);
 
         if (roomError) {
@@ -92,13 +95,11 @@ export default function ReservationForm({ onSuccess }: ReservationFormProps) {
             ? result
             : (result as any).data || (result as any).rooms || [];
 
-          // Filter for available rooms
-          const availableOnly = actualData.filter(
-            (room) =>
-              room.status === RoomStatus.Available ||
-              room.status === (RoomStatus.Available as any) ||
-              Number(room.status) === 0,
-          );
+          // Case-insensitive filter for available rooms
+          const availableOnly = actualData.filter((room) => {
+            const statusStr = String(room.status).toLowerCase();
+            return statusStr === "available" || statusStr === "0";
+          });
 
           setRooms(availableOnly);
         }
@@ -153,8 +154,10 @@ export default function ReservationForm({ onSuccess }: ReservationFormProps) {
       }
     }
 
-    if (!skipEmail && !form.email.trim()) {
-      validationErrors.email = "Email is required";
+    if (!skipEmail) {
+      if (!form.email.trim()) {
+        validationErrors.email = "Email is required";
+      }
     }
 
     if (!skipId) {
@@ -174,6 +177,23 @@ export default function ReservationForm({ onSuccess }: ReservationFormProps) {
       return;
     }
 
+    // Safely extract room id handling multiple casing variants
+    const selectedRoom = rooms.find((r) => r.roomNumber === form.roomNumber);
+    const roomId =
+      selectedRoom?.id?.toString() ||
+      selectedRoom?.ID?.toString() ||
+      selectedRoom?._id?.toString() ||
+      "";
+
+    if (!roomId) {
+      setShowNotification({
+        show: true,
+        msg: "Please select a valid room.",
+        type: "negative",
+      });
+      return;
+    }
+
     const finalPayload = {
       ...form,
       phoneNumber: skipPhone ? "0000000000" : form.phoneNumber,
@@ -183,7 +203,7 @@ export default function ReservationForm({ onSuccess }: ReservationFormProps) {
     };
 
     try {
-      const res = await checkin(finalPayload);
+      const res = await checkin(finalPayload, roomId);
 
       if (hookError || !res) {
         throw new Error(hookError || "Check-in failed");
@@ -194,9 +214,12 @@ export default function ReservationForm({ onSuccess }: ReservationFormProps) {
         msg: "Check-in successful!",
         type: "positive",
       });
+
+      const responseData = (res as any).data || res;
+      setCheckInResponse(responseData);
       setSubmitted(true);
 
-      const passCode = (res as any).passCode || (res as any).data?.passCode;
+      const passCode = responseData.passCode;
       if (passCode && onSuccess) {
         onSuccess(passCode);
       }
@@ -223,7 +246,7 @@ export default function ReservationForm({ onSuccess }: ReservationFormProps) {
 
       <div className="min-h-screen bg-gray-50 flex flex-col items-center p-4 sm:p-8">
         {isSubmitted ? (
-          <SuccessScreen />
+          <SuccessScreen data={checkInResponse} />
         ) : (
           <div className="w-full max-w-md bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-10">
             <header className="mb-8">
@@ -233,7 +256,7 @@ export default function ReservationForm({ onSuccess }: ReservationFormProps) {
               </p>
               {!bid && (
                 <p className="text-xs text-red-500 font-bold mt-2">
-                  ⚠️ Warning: No Business ID detected in URL.
+                  ⚠️ Warning: No Business ID detected.
                 </p>
               )}
             </header>
@@ -250,7 +273,7 @@ export default function ReservationForm({ onSuccess }: ReservationFormProps) {
                     name="firstName"
                     type="text"
                     placeholder="John"
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#00ed64] outline-none text-sm"
+                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#00ed64] outline-none text-sm text-gray-900"
                   />
                 </div>
                 <div>
@@ -263,7 +286,7 @@ export default function ReservationForm({ onSuccess }: ReservationFormProps) {
                     name="lastName"
                     type="text"
                     placeholder="Doe"
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#00ed64] outline-none text-sm"
+                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#00ed64] outline-none text-sm text-gray-900"
                   />
                 </div>
               </div>
@@ -276,7 +299,7 @@ export default function ReservationForm({ onSuccess }: ReservationFormProps) {
                   name="gender"
                   value={form.gender}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white outline-none text-sm"
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white outline-none text-sm text-gray-900"
                 >
                   <option value={Gender.Male}>Male</option>
                   <option value={Gender.Female}>Female</option>
@@ -306,7 +329,7 @@ export default function ReservationForm({ onSuccess }: ReservationFormProps) {
                   name="phoneNumber"
                   disabled={skipPhone}
                   placeholder={skipPhone ? "Skipped" : "082 123 4567"}
-                  className={`w-full px-4 py-3 rounded-lg border border-gray-300 outline-none text-sm ${skipPhone ? "bg-gray-100 text-gray-400" : ""}`}
+                  className={`w-full px-4 py-3 rounded-lg border border-gray-300 outline-none text-sm text-gray-900 ${skipPhone ? "bg-gray-100 text-gray-400" : ""}`}
                 />
               </div>
 
@@ -333,7 +356,7 @@ export default function ReservationForm({ onSuccess }: ReservationFormProps) {
                   name="email"
                   disabled={skipEmail}
                   placeholder={skipEmail ? "Skipped" : "testing@gmail.com"}
-                  className={`w-full px-4 py-3 rounded-lg border border-gray-300 outline-none text-sm ${skipEmail ? "bg-gray-100 text-gray-400" : ""}`}
+                  className={`w-full px-4 py-3 rounded-lg border border-gray-300 outline-none text-sm text-gray-900 ${skipEmail ? "bg-gray-100 text-gray-400" : ""}`}
                 />
               </div>
 
@@ -360,7 +383,7 @@ export default function ReservationForm({ onSuccess }: ReservationFormProps) {
                   onChange={handleChange}
                   disabled={skipId}
                   placeholder={skipId ? "Skipped" : "South African ID"}
-                  className={`w-full px-4 py-3 rounded-lg border border-gray-300 outline-none text-sm ${skipId ? "bg-gray-100 text-gray-400" : ""}`}
+                  className={`w-full px-4 py-3 rounded-lg border border-gray-300 outline-none text-sm text-gray-900 ${skipId ? "bg-gray-100 text-gray-400" : ""}`}
                 />
               </div>
 
@@ -372,7 +395,7 @@ export default function ReservationForm({ onSuccess }: ReservationFormProps) {
                   name="reasonForVisit"
                   value={form.reasonForVisit}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white outline-none text-sm"
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white outline-none text-sm text-gray-900"
                 >
                   <option value={ReasonForVisit.Personal}>Personal</option>
                   <option value={ReasonForVisit.Delivery}>Delivery</option>
@@ -400,8 +423,9 @@ export default function ReservationForm({ onSuccess }: ReservationFormProps) {
                     ? rooms.map((room) => (
                         <option
                           key={
+                            room.id?.toString() ||
+                            room.ID?.toString() ||
                             room._id?.toString() ||
-                            (room.id as string) ||
                             room.roomNumber
                           }
                           value={room.roomNumber}

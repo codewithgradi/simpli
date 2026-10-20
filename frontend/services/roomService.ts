@@ -1,12 +1,12 @@
 import { apiClient } from "@/context/apiClient";
-export interface Room{
-    id:string;
-    roomNumber:string;
-    floor:number;
-    type:string;
-    status:RoomStatus;
-    numberTimesBooked:number;
-    companyId:string;
+export interface Room {
+  id: string;
+  roomNumber: string;
+  floor: number;
+  type: string;
+  status: RoomStatus;
+  numberOfTimesBooked: number;
+  companyId: string;
 }
 export interface UpdateRoom {
   roomNumber: string;
@@ -22,11 +22,12 @@ export enum RoomStatus{
      Available, Occupied, Maintenance
 }
 export const roomService=  {
-    async getAll(companyId? :string) : Promise<Room[]>{
-        const url = companyId
-          ? `/api/room/all?CmpId=${companyId}`
-          : `/api/room/all`;
-        return apiClient.get(url);
+    async getAll(companyId :string) : Promise<Room[]>{
+       
+        return apiClient.get(`/api/room/public/all?CmpId=${companyId}`);
+    },
+    async  getAllPrivate(): Promise<Room[]> {
+        return apiClient.get("/api/room/company/all");
     },
     async getOne() : Promise<Room>{
         return apiClient.get(`/api/room/`);
