@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect } from "react";
 import QRCodeSVG from "react-qr-code";
 import { useReactToPrint } from "react-to-print";
 import { useCompany } from "@/hooks/useCompany";
+import { API_BASE_URL } from "@/context/apiClient";
 
 interface BusinessQRModalProps {
   businessId?: string;
@@ -53,7 +54,7 @@ const BusinessQRModal: React.FC<BusinessQRModalProps> = ({
   const activeId = companyId || propBusinessId || "";
   const activeName = companyName || propBusinessName || "Official Business";
 
-  const scanUrl = `${process.env.NEXT_PUBLIC_VERCEL_URL || process.env.NEXT_PUBLIC_DEVELOPMENT_URL}/visit?bid=${activeId}`;
+  const scanUrl = `${API_BASE_URL}/visit?bid=${activeId}`;
 
   const handlePrint = useReactToPrint({
     contentRef: qrRef,
