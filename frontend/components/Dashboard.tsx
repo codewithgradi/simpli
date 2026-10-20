@@ -5,35 +5,35 @@ import {
   LayoutDashboard,
   Users,
   Hotel,
+  ActivityIcon,
   HotelIcon,
   LogOut,
   Settings,
   Bell,
   ShieldCheck,
-  Plus,
+  AlertTriangle,
 } from "lucide-react";
-import FirstView from "./FirstView";
+import { FirstView } from "./FirstView";
 import { VisitorView } from "./VisitorView";
 import { ProfileView } from "./Profile";
 import { SettingsView } from "./Settings";
+import { QuickActionsView } from "./QuickActions";
 import NotificationCenter from "./SystemNotification";
 import DashboardSkeleton from "./DashboardSkeleton";
-import CreateRoomModal from "./CreateRoomModal";
 import RoomManagement from "./ViewRooms";
 import { useRouter } from "next/navigation";
 import Notification from "./Notification";
-import Link from "next/link";
 import { useAuthService } from "@/hooks/useAuthService";
 
 export default function HotelDashboard() {
   const [activeTab, setActiveTab] = useState("Dashboard");
-  const [loading, setLoading] = useState(false);
+  const [loading] = useState(false);
   const [showNotifs, setShowNotifs] = useState(false);
-  const [showModal, setShowModal] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [isloggedIn, setIsLoggedIn] = useState(true);
   const router = useRouter();
 
-  // Consume the logout function from your auth hook
+  // Consume the logout function from auth hook
   const { logout } = useAuthService();
 
   const navigation = [
@@ -42,6 +42,11 @@ export default function HotelDashboard() {
     { name: "Hotel Profile", icon: Hotel, component: <ProfileView /> },
     { name: "Settings", icon: Settings, component: <SettingsView /> },
     { name: "Rooms", icon: HotelIcon, component: <RoomManagement /> },
+    {
+      name: "Quick Action",
+      icon: ActivityIcon,
+      component: <QuickActionsView />,
+    },
   ];
 
   const renderContent = () => {
@@ -64,10 +69,11 @@ export default function HotelDashboard() {
     return (
       <Notification
         onClose={() => setIsLoggedIn(false)}
-        message="logged out successfully"
+        message="Logged out successfully"
         type="positive"
       />
     );
+
   if (loading) return <DashboardSkeleton />;
 
   return (
@@ -100,8 +106,18 @@ export default function HotelDashboard() {
           ))}
         </nav>
 
-        <div className="p-4 border-t border-white/10 text-xs text-gray-500">
-          v2.4.0-production
+        {/* BOTTOM SIDEBAR ACTIONS */}
+        <div className="p-4 border-t border-white/10 space-y-3">
+          <button
+            onClick={() => setShowLogoutModal(true)}
+            className="w-full flex items-center gap-3 px-4 py-2.5 rounded-md text-xs font-bold text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors"
+          >
+            <LogOut size={16} />
+            Sign Out
+          </button>
+          <div className="text-[11px] text-gray-500 px-4">
+            v2.4.0-production
+          </div>
         </div>
       </aside>
 
@@ -115,22 +131,6 @@ export default function HotelDashboard() {
             </span>
           </div>
           <div className="flex items-center gap-6">
-            <button
-              onClick={() => setShowModal(true)}
-              className="bg-[#00ed64] hover:bg-[#00c654] text-[#001e2b] px-4 py-1.5 rounded font-bold text-xs flex items-center gap-2 transition-colors"
-            >
-              <Plus
-                size={18}
-                className="text-gray-400 cursor-pointer hover:text-[#00ed64]"
-              />
-              <p>Create a room</p>
-            </button>
-            <Link
-              href={"/console/scan"}
-              className="bg-green-800 text-white hover:bg-green-900 px-4 py-1.5 rounded font-bold text-xs flex items-center gap-2 transition-colors"
-            >
-              <p>Go to Scanner</p>
-            </Link>
             <div className="relative">
               <button
                 onClick={() => setShowNotifs(!showNotifs)}
@@ -145,17 +145,6 @@ export default function HotelDashboard() {
                 onClose={() => setShowNotifs(false)}
               />
             </div>
-
-            <div className="w-8 h-8 bg-[#00684a] rounded-full border border-gray-200 flex items-center justify-center text-white text-xs font-bold">
-              AD
-            </div>
-            <button
-              onClick={handleLogOut}
-              className="flex items-center justify-between space-x-3 font-bold rounded-b-md rounded-t-md text-white opacity-65 bg-red-400 px-2 py-1 hover:bg-red-900"
-            >
-              <p>Log out</p>
-              <LogOut />
-            </button>
           </div>
         </header>
 
@@ -163,14 +152,43 @@ export default function HotelDashboard() {
         <div className="flex-1 overflow-y-auto bg-gray-50/50 p-8">
           <div className="max-w-7xl mx-auto animate-in fade-in duration-500">
             {renderContent()}
-            <NotificationCenter
-              isOpen={showNotifs}
-              onClose={() => setShowNotifs(false)}
-            />
           </div>
         </div>
       </main>
-      <CreateRoomModal isOpen={showModal} onClose={() => setShowModal(false)} />
+
+      {/* SIGN OUT CONFIRMATION MODAL */}
+      {showLogoutModal && (
+        <div className="fixed inset-0 bg-[#001e2b]/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-gray-100 space-y-4">
+            <div className="w-12 h-12 bg-red-50 text-red-600 rounded-xl flex items-center justify-center border border-red-100">
+              <AlertTriangle size={24} />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-[#001e2b]">
+                Confirm Sign Out
+              </h3>
+              <p className="text-xs text-gray-500 mt-1">
+                Are you sure you want to end your terminal session? You will
+                need to log back in to manage visitors.
+              </p>
+            </div>
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                onClick={() => setShowLogoutModal(false)}
+                className="px-4 py-2 text-xs font-bold text-gray-500 hover:bg-gray-100 rounded-xl transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleLogOut}
+                className="px-4 py-2 text-xs font-bold bg-red-600 text-white hover:bg-red-700 rounded-xl transition-colors shadow-sm"
+              >
+                Sign Out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

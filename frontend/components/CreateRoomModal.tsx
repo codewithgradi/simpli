@@ -1,5 +1,6 @@
 "use client";
-import { X, Hotel, Save } from "lucide-react";
+
+import { X, Hotel, Save, Loader2 } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import Notification from "./Notification";
 import { useRoom } from "@/hooks/useRoom";
@@ -82,17 +83,11 @@ const CreateRoomModal = ({ isOpen, onClose, onSuccess }: ModalProps) => {
     };
 
     try {
-      const res = await createRoom(payload);
+      await createRoom(payload);
 
-      // If the service/hook returns null or throws an error
-      // if (!res) {
-      //   throw new Error("Failed to create room");
-      // }
-
-      // Success notification
       triggerNotify("Room created successfully", "positive");
 
-      // Clear form data immediately so it's ready for a new entry
+      // Clear form data
       setForm({ roomNumber: "", floor: "", status: RoomStatus.Available });
 
       setTimeout(() => {
@@ -102,7 +97,6 @@ const CreateRoomModal = ({ isOpen, onClose, onSuccess }: ModalProps) => {
     } catch (err: any) {
       let finalMsg = err.message || "Failed to create room";
 
-      // Extract only the 'detail' string if error message contains JSON
       try {
         if (typeof finalMsg === "string" && finalMsg.includes("detail")) {
           const parsed = JSON.parse(finalMsg);
@@ -125,13 +119,13 @@ const CreateRoomModal = ({ isOpen, onClose, onSuccess }: ModalProps) => {
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-[#001e2b]/60 backdrop-blur-sm z-[9998]"
+        className="fixed inset-0 bg-[#001e2b]/60 backdrop-blur-sm z-[9998] transition-opacity"
         onClick={onClose}
       />
 
       {/* Modal Container */}
-      <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg z-[9999] px-4 animate-in zoom-in-95 fade-in duration-200">
-        <div className="bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden">
+      <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md z-[9999] px-4 animate-in zoom-in-95 fade-in duration-200">
+        <div className="bg-white rounded-2xl shadow-xl border border-slate-200/80 overflow-hidden">
           {showNotification.show && (
             <Notification
               message={showNotification.msg}
@@ -143,32 +137,34 @@ const CreateRoomModal = ({ isOpen, onClose, onSuccess }: ModalProps) => {
           )}
 
           {/* Header */}
-          <div className="bg-[#001e2b] p-6 text-white flex justify-between items-center">
+          <div className="p-6 pb-4 flex items-center justify-between border-b border-slate-100">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-[#00ed64] rounded-lg">
-                <Hotel className="text-[#001e2b] w-5 h-5" />
+              <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl border border-emerald-100/80">
+                <Hotel size={20} />
               </div>
               <div>
-                <h3 className="text-lg font-bold leading-none">Add New Room</h3>
-                <p className="text-[11px] text-gray-400 uppercase tracking-widest mt-1">
-                  Property Management
+                <h3 className="text-base font-bold text-slate-900 tracking-tight">
+                  Add New Room
+                </h3>
+                <p className="text-xs text-slate-500 font-medium mt-0.5">
+                  Configure space in property registry
                 </p>
               </div>
             </div>
             <button
               onClick={onClose}
-              className="p-1 hover:bg-white/10 rounded-full transition-colors"
+              className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
             >
-              <X size={20} />
+              <X size={18} />
             </button>
           </div>
 
           {/* Form */}
-          <form className="p-8 space-y-5 bg-white" onSubmit={handleSubmit}>
+          <form className="p-6 space-y-4 bg-white" onSubmit={handleSubmit}>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wide">
-                  Room Number
+                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">
+                  Room Number <span className="text-red-500">*</span>
                 </label>
                 <input
                   onChange={handleForm}
@@ -176,12 +172,13 @@ const CreateRoomModal = ({ isOpen, onClose, onSuccess }: ModalProps) => {
                   value={form.roomNumber}
                   type="text"
                   placeholder="e.g. 101"
-                  className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#00ed64] focus:ring-1 focus:ring-[#00ed64] outline-none text-sm transition-all"
+                  className="w-full px-3.5 py-2 border border-slate-200 rounded-xl focus:border-[#00ed64] focus:ring-2 focus:ring-[#00ed64]/20 outline-none text-sm text-slate-800 transition-all placeholder:text-slate-400 font-medium"
                 />
               </div>
+
               <div className="space-y-1.5">
-                <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wide">
-                  Floor
+                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">
+                  Floor <span className="text-red-500">*</span>
                 </label>
                 <input
                   onChange={handleForm}
@@ -189,20 +186,20 @@ const CreateRoomModal = ({ isOpen, onClose, onSuccess }: ModalProps) => {
                   value={form.floor}
                   type="number"
                   placeholder="e.g. 1"
-                  className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#00ed64] focus:ring-1 focus:ring-[#00ed64] outline-none text-sm transition-all"
+                  className="w-full px-3.5 py-2 border border-slate-200 rounded-xl focus:border-[#00ed64] focus:ring-2 focus:ring-[#00ed64]/20 outline-none text-sm text-slate-800 transition-all placeholder:text-slate-400 font-medium"
                 />
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wide">
+              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">
                 Initial Status
               </label>
               <select
                 name="status"
                 value={form.status}
                 onChange={handleForm}
-                className="w-full px-4 py-2 border border-gray-300 rounded bg-white text-sm outline-none focus:border-[#00ed64]"
+                className="w-full px-3.5 py-2 border border-slate-200 rounded-xl bg-white text-sm text-slate-800 font-medium outline-none focus:border-[#00ed64] focus:ring-2 focus:ring-[#00ed64]/20 transition-all cursor-pointer"
               >
                 <option value={RoomStatus.Available}>Available</option>
                 <option value={RoomStatus.Occupied}>Occupied</option>
@@ -210,24 +207,29 @@ const CreateRoomModal = ({ isOpen, onClose, onSuccess }: ModalProps) => {
               </select>
             </div>
 
-            <div className="pt-6 border-t border-gray-100 flex justify-end gap-3">
+            {/* Footer Buttons */}
+            <div className="pt-4 mt-6 border-t border-slate-100 flex items-center justify-end gap-3">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-6 py-2 text-sm font-bold text-gray-500 hover:bg-gray-50 rounded transition-colors"
+                className="px-4 py-2 text-xs font-bold text-slate-500 hover:text-slate-700 hover:bg-slate-50 rounded-xl transition-colors"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={loading}
-                className="px-6 py-2 text-sm font-bold bg-[#00ed64] text-[#001e2b] rounded hover:bg-[#00c654] transition-all shadow-sm flex items-center gap-2 disabled:opacity-50"
+                className="px-5 py-2 text-xs font-bold bg-[#00ed64] text-[#001e2b] rounded-xl hover:bg-[#00c654] transition-all shadow-sm flex items-center gap-2 disabled:opacity-50"
               >
                 {loading ? (
-                  "Creating..."
+                  <>
+                    <Loader2 size={16} className="animate-spin" />
+                    <span>Creating...</span>
+                  </>
                 ) : (
                   <>
-                    <Save size={18} /> Save Room
+                    <Save size={16} />
+                    <span>Save Room</span>
                   </>
                 )}
               </button>

@@ -114,6 +114,7 @@ public static class ServiceExtentions
     services.AddScoped<SystemEmailService>();
 
     services.AddHttpClient<IEmailService, EmailService>();
+    services.AddScoped<IAnalyticsService,AnalyticsService>();
 
     return services;
   }

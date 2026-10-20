@@ -14,7 +14,7 @@ public class AnalyticsController : ControllerBase
 
     public AnalyticsController(
         IAnalyticsService analyticsService,
-        Logger<AnalyticsController> logger)
+        ILogger<AnalyticsController> logger)
     {
         _analyticsService = analyticsService;
         _logger = logger;

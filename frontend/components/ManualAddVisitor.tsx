@@ -57,8 +57,7 @@ const AddVisitorModal = ({ isOpen, onClose }: ModalProps) => {
     const fetchData = async () => {
       try {
         const compData = await getCompany();
-        const foundCompanyId =
-          compData?.id ;
+        const foundCompanyId = compData?.id;
         if (foundCompanyId) {
           setCompanyId(String(foundCompanyId));
         }
@@ -143,7 +142,9 @@ const AddVisitorModal = ({ isOpen, onClose }: ModalProps) => {
       phoneNumber: form.phoneNumber.trim()
         ? form.phoneNumber.trim()
         : "0000000000",
-      email: form.email.trim() ? form.email.trim() : "simpli.solutions.sys@gmail.com",
+      email: form.email.trim()
+        ? form.email.trim()
+        : "simpli.solutions.sys@gmail.com",
       gender: form.gender,
       roomNumber: form.roomNumber,
       reasonForVisit: form.reasonForVisit,
@@ -153,7 +154,6 @@ const AddVisitorModal = ({ isOpen, onClose }: ModalProps) => {
     try {
       const response = await checkin(payload, targetRoomId);
 
-      // Check if backend returned a failure status or error message within response
       if (response && (response as any).success === false) {
         throw new Error(
           (response as any).error ||
@@ -196,8 +196,8 @@ const AddVisitorModal = ({ isOpen, onClose }: ModalProps) => {
         onClick={onClose}
       />
 
-      <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl z-[9999] px-4 animate-in zoom-in-95 fade-in duration-200">
-        <div className="bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden">
+      <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-xl z-[9999] px-4 animate-in zoom-in-95 fade-in duration-200">
+        <div className="bg-white rounded-2xl shadow-xl border border-slate-200/80 overflow-hidden">
           {showNotification.show && (
             <Notification
               message={showNotification.msg}
@@ -208,33 +208,34 @@ const AddVisitorModal = ({ isOpen, onClose }: ModalProps) => {
             />
           )}
 
-          <div className="bg-[#001e2b] p-6 text-white flex justify-between items-center">
+          {/* Header */}
+          <div className="p-6 pb-4 flex items-center justify-between border-b border-slate-100">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-[#00ed64] rounded-lg">
-                <UserPlus className="text-[#001e2b] w-5 h-5" />
+              <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl border border-emerald-100/80">
+                <UserPlus size={20} />
               </div>
               <div>
-                <h3 className="text-lg font-bold leading-none">
+                <h3 className="text-base font-bold text-slate-900 tracking-tight">
                   Manual Check-In
                 </h3>
-                <p className="text-[11px] text-gray-400 uppercase tracking-widest mt-1">
-                  Register New Visitor
+                <p className="text-xs text-slate-500 font-medium mt-0.5">
+                  Register new visitor into security log
                 </p>
               </div>
             </div>
             <button
               onClick={onClose}
-              className="p-1 hover:bg-white/10 rounded-full transition-colors"
+              className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
             >
-              <X size={20} />
+              <X size={18} />
             </button>
           </div>
 
-          <form className="p-8 space-y-6 bg-white" onSubmit={handleSubmit}>
+          <form className="p-6 space-y-4 bg-white" onSubmit={handleSubmit}>
             {/* Required Names */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wide">
+                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">
                   First Name <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -243,11 +244,11 @@ const AddVisitorModal = ({ isOpen, onClose }: ModalProps) => {
                   value={form.firstName}
                   type="text"
                   placeholder="John"
-                  className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#00ed64] outline-none text-sm"
+                  className="w-full px-3.5 py-2 border border-slate-200 rounded-xl focus:border-[#00ed64] focus:ring-2 focus:ring-[#00ed64]/20 outline-none text-sm text-slate-800 transition-all placeholder:text-slate-400 font-medium"
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wide">
+                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">
                   Last Name <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -256,16 +257,16 @@ const AddVisitorModal = ({ isOpen, onClose }: ModalProps) => {
                   value={form.lastName}
                   type="text"
                   placeholder="Doe"
-                  className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#00ed64] outline-none text-sm"
+                  className="w-full px-3.5 py-2 border border-slate-200 rounded-xl focus:border-[#00ed64] focus:ring-2 focus:ring-[#00ed64]/20 outline-none text-sm text-slate-800 transition-all placeholder:text-slate-400 font-medium"
                 />
               </div>
             </div>
 
             {/* Optional Contact / Details */}
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-3 gap-3">
               <div className="space-y-1.5">
-                <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wide">
-                  ID / Passport (13 digits)
+                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">
+                  ID / Passport
                 </label>
                 <input
                   onChange={handleForm}
@@ -273,13 +274,13 @@ const AddVisitorModal = ({ isOpen, onClose }: ModalProps) => {
                   value={form.idNumber}
                   type="text"
                   maxLength={13}
-                  placeholder="13 digits ID"
-                  className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#00ed64] outline-none text-sm"
+                  placeholder="13 digits"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:border-[#00ed64] focus:ring-2 focus:ring-[#00ed64]/20 outline-none text-xs text-slate-800 transition-all placeholder:text-slate-400 font-medium"
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wide">
-                  Phone Number (Optional)
+                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">
+                  Phone
                 </label>
                 <input
                   onChange={handleForm}
@@ -287,35 +288,35 @@ const AddVisitorModal = ({ isOpen, onClose }: ModalProps) => {
                   value={form.phoneNumber}
                   type="tel"
                   placeholder="0000000000"
-                  className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#00ed64] outline-none text-sm"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:border-[#00ed64] focus:ring-2 focus:ring-[#00ed64]/20 outline-none text-xs text-slate-800 transition-all placeholder:text-slate-400 font-medium"
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wide">
-                  Email (Optional)
+                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">
+                  Email
                 </label>
                 <input
                   onChange={handleForm}
                   name="email"
                   value={form.email}
                   type="email"
-                  placeholder="no-email@provided.com"
-                  className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#00ed64] outline-none text-sm"
+                  placeholder="name@mail.com"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:border-[#00ed64] focus:ring-2 focus:ring-[#00ed64]/20 outline-none text-xs text-slate-800 transition-all placeholder:text-slate-400 font-medium"
                 />
               </div>
             </div>
 
             {/* Room, Gender, and Reason */}
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-3 gap-3">
               <div className="space-y-1.5">
-                <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wide">
+                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">
                   Gender
                 </label>
                 <select
                   name="gender"
                   value={form.gender}
                   onChange={handleForm}
-                  className="w-full px-4 py-2 border border-gray-300 rounded bg-white text-sm outline-none"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white text-xs text-slate-800 font-medium outline-none focus:border-[#00ed64] focus:ring-2 focus:ring-[#00ed64]/20 transition-all cursor-pointer"
                 >
                   <option value={Gender.Male}>Male</option>
                   <option value={Gender.Female}>Female</option>
@@ -323,17 +324,17 @@ const AddVisitorModal = ({ isOpen, onClose }: ModalProps) => {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wide">
-                  Room Number <span className="text-red-500">*</span>
+                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">
+                  Room <span className="text-red-500">*</span>
                 </label>
                 <select
                   name="roomNumber"
                   value={form.roomNumber}
                   onChange={handleForm}
-                  className="w-full px-4 py-2 border border-gray-300 rounded bg-white text-sm outline-none"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white text-xs text-slate-800 font-medium outline-none focus:border-[#00ed64] focus:ring-2 focus:ring-[#00ed64]/20 transition-all cursor-pointer"
                 >
                   <option value="">
-                    {roomsLoading ? "Loading Rooms..." : "Select Room"}
+                    {roomsLoading ? "Loading..." : "Select Room"}
                   </option>
                   {rooms.map((r, index) => (
                     <option
@@ -347,14 +348,14 @@ const AddVisitorModal = ({ isOpen, onClose }: ModalProps) => {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wide">
+                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">
                   Reason
                 </label>
                 <select
                   onChange={handleForm}
                   name="reasonForVisit"
                   value={form.reasonForVisit}
-                  className="w-full px-4 py-2 border border-gray-300 rounded bg-white text-sm outline-none"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white text-xs text-slate-800 font-medium outline-none focus:border-[#00ed64] focus:ring-2 focus:ring-[#00ed64]/20 transition-all cursor-pointer"
                 >
                   <option value={ReasonForVisit.Meeting}>Meeting</option>
                   <option value={ReasonForVisit.Delivery}>Delivery</option>
@@ -367,29 +368,30 @@ const AddVisitorModal = ({ isOpen, onClose }: ModalProps) => {
             </div>
 
             {/* Action Buttons */}
-            <div className="pt-6 border-t border-gray-100 flex justify-end gap-3">
+            <div className="pt-4 mt-6 border-t border-slate-100 flex items-center justify-end gap-3">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-6 py-2 text-sm font-bold text-gray-500 hover:bg-gray-50 rounded transition-colors"
+                className="px-4 py-2 text-xs font-bold text-slate-500 hover:text-slate-700 hover:bg-slate-50 rounded-xl transition-colors"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={checkInLoading || roomsLoading}
-                className="px-6 py-2 text-sm font-bold bg-[#00ed64] text-[#001e2b] rounded hover:bg-[#00c654] transition-all flex items-center gap-2 disabled:opacity-50 disabled:bg-gray-300"
+                className="px-5 py-2 text-xs font-bold bg-[#00ed64] text-[#001e2b] rounded-xl hover:bg-[#00c654] transition-all shadow-sm flex items-center gap-2 disabled:opacity-50"
               >
                 {checkInLoading ? (
                   <>
                     <Loader2 size={16} className="animate-spin" />
-                    Checking In...
+                    <span>Checking In...</span>
                   </>
                 ) : roomsLoading ? (
-                  "Loading Rooms..."
+                  <span>Loading...</span>
                 ) : (
                   <>
-                    <ShieldCheck size={18} /> Complete Check-In
+                    <ShieldCheck size={16} />
+                    <span>Complete Check-In</span>
                   </>
                 )}
               </button>
