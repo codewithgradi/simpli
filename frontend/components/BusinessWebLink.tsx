@@ -53,8 +53,12 @@ const BusinessQRModal: React.FC<BusinessQRModalProps> = ({
 
   const activeId = companyId || propBusinessId || "";
   const activeName = companyName || propBusinessName || "Official Business";
-
-  const scanUrl = `${API_BASE_URL}/visit?bid=${activeId}`;
+  const FRONTEND_URL =
+    process.env.NODE_ENV == "production"
+      ? process.env.NEXT_PUBLIC_VECEL_URL
+      : process.env.NEXT_PUBLIC_LOCAL_URL;
+      
+  const scanUrl = `${FRONTEND_URL}/visit?bid=${activeId}`;
 
   const handlePrint = useReactToPrint({
     contentRef: qrRef,
