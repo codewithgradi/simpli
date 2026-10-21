@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -22,8 +23,11 @@ namespace simpli.Api
     [HttpGet]
     public async Task<IActionResult> GetAllNotification([FromQuery] QueryParameters query)
     {
-      var companyId = Convert.ToInt32(User.FindFirst("CompanyID").Value);
-      if (companyId == null) return Unauthorized("Invalid session");
+      var companyIdClaim = User.FindFirstValue("CompanyId");
+      if (string.IsNullOrEmpty(companyIdClaim) || !int.TryParse(companyIdClaim, out var companyId))
+      {
+        return Unauthorized(new { message = "Invalid or missing company session." });
+      }
       var notifcations = await _notiService.GetAllNotifications(companyId, query);
       if (notifcations == null) return null;
       return Ok(notifcations);
@@ -32,8 +36,11 @@ namespace simpli.Api
     [HttpPatch("mark-read")]
     public async Task<IActionResult> MarkAllRead()
     {
-      var companyId = Convert.ToInt32(User.FindFirst("CompanyID").Value);
-      if (companyId == null) return Unauthorized("Invalid session.");
+      var companyIdClaim = User.FindFirstValue("CompanyId");
+      if (string.IsNullOrEmpty(companyIdClaim) || !int.TryParse(companyIdClaim, out var companyId))
+      {
+        return Unauthorized(new { message = "Invalid or missing company session." });
+      }
       await _notiService.MarkAllRead(companyId);
       return NoContent();
     }
@@ -41,9 +48,12 @@ namespace simpli.Api
     [HttpDelete]
     public async Task<IActionResult> clearAll()
     {
-      var companyID = Convert.ToInt32(User.FindFirst("CompanyID").Value);
-      if (companyID == null) return Unauthorized();
-      await _notiService.ClearAllNotifications(companyID);
+      var companyIdClaim = User.FindFirstValue("CompanyId");
+      if (string.IsNullOrEmpty(companyIdClaim) || !int.TryParse(companyIdClaim, out var companyId))
+      {
+        return Unauthorized(new { message = "Invalid or missing company session." });
+      }
+      await _notiService.ClearAllNotifications(companyId);
       return NoContent();
     }
 

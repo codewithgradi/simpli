@@ -1,4 +1,5 @@
 import { apiClient } from "@/context/apiClient";
+import { LoginRequest } from "./authService";
 
 //getCompany,createCompany,updateCompany,softDeleteCompany, reactivateCompany;
 
@@ -35,6 +36,9 @@ export interface UpdateCompanyResponse{
   address: AddressContent;
   website: string;
 }
+export interface ReactivateResponse {
+    message :string;
+}
 export const companySevice=  {
     async getCompany() : Promise<Company>{
         return apiClient.get("/api/company");
@@ -45,7 +49,7 @@ export const companySevice=  {
     async softDelete():Promise<void>{
         return apiClient.patch("/api/company/soft-delete",{})
     },
-    async reactivate():Promise<void>{
-        return apiClient.patch("/api/company/reactivate",{})
+    async reactivate(data:LoginRequest):Promise<ReactivateResponse>{
+        return apiClient.patch("/api/company/reactivate",data)
     }
 }

@@ -1,18 +1,20 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
-// Use "export default" here
 export default function middleware(request: NextRequest) {
-  const token = request.cookies.get('jwt')?.value;
+  // Check for either cookie name so it never fails due to naming
+  const token =
+    request.cookies.get("jwt")?.value ||
+    request.cookies.get("accessToken")?.value;
   const { pathname } = request.nextUrl;
 
-  if (pathname.startsWith('/console') && !token) {
-    return NextResponse.redirect(new URL('/login', request.url));
+  if (pathname.startsWith("/console") && !token) {
+    return NextResponse.redirect(new URL("/login", request.url));
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ['/console/:path*'],
+  matcher: ["/console/:path*"],
 };

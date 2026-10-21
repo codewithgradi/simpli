@@ -1,115 +1,115 @@
 using System.Security.Cryptography;
-using QRCoder;
-using MailKit.Net.Smtp;
-using MimeKit;
-using MimeKit.Utils;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Logging;
 using System.Net.Http.Json;
-
+using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.Extensions.Configuration;
 
 public class EmailService : IEmailService
 {
-  private readonly OtherSettings _setings;
-  private readonly ILogger<EmailService> _logger;
-  private readonly HttpClient _httpClient;
+    private readonly OtherSettings _settings;
+    private readonly ILogger<EmailService> _logger;
+    private readonly HttpClient _httpClient;
+    private readonly IConfiguration _configuration;
 
-  public EmailService(IOptions<OtherSettings> settings, ILogger<EmailService> logger, HttpClient? httpClient)
-  {
-    _setings = settings.Value;
-    _logger = logger;
-    _httpClient = httpClient;
-
-    if (_setings == null)
+    public EmailService(IOptions<OtherSettings> settings, ILogger<EmailService> logger, HttpClient? httpClient,IConfiguration configuration)
     {
-      throw new ArgumentNullException("Entire other setting is empty");
-    }
-    if (string.IsNullOrEmpty(_setings.SystemEmail))
-    {
-      throw new InvalidOperationException("OtherSettings:SystemEmail is null or empty! Check your environment variables.");
-    }
+        _settings = settings.Value;
+        _configuration = configuration;
+        _logger = logger;
+        _httpClient = httpClient;
 
-    if (string.IsNullOrEmpty(_setings.AppPassword))
-    {
-      throw new InvalidOperationException("OtherSettings:AppPassword is null or empty! Check your environment variables.");
-    }
-  }
-  public async Task SendVisitorEmailAsync(string email, string firstName, string roomNumber, string data)
-  {
-    // 1. Generate the QR Code with specific colors 
-    using var qrGenerator = new QRCodeGenerator();
-    using var qrCodeData = qrGenerator.CreateQrCode(data, QRCodeGenerator.ECCLevel.Q);
-
-    using var qrCode = new PngByteQRCode(qrCodeData);
-
-    byte[] darkColor = new byte[] { 0x00, 0xED, 0x64 };
-    byte[] lightColor = new byte[] { 0x00, 0x1E, 0x2B };
-    byte[] qrCodeBytes = qrCode.GetGraphic(20, darkColor, lightColor, true);
-
-    // FIX: Convert the raw bytes to a proper Base64 encoded string text string
-    string base64QrCode = Convert.ToBase64String(qrCodeBytes);
-
-    // 2. Prepare the payload for Brevo's API with an inline attachment mapping
-    var emailPayload = new
-    {
-      sender = new { name = "Check-in System", email = _setings.SystemEmail },
-      to = new[] { new { email = email, name = firstName } },
-      subject = $"Your Exit Pass - {firstName}",
-
-      // FIX: Point the image source directly to the filename of your attachment
-      htmlContent = $@"
-        <div style='background-color: #001E2B; color: #ffffff; padding: 40px; text-align: center; font-family: sans-serif; border-radius: 15px;'>
-            <h1 style='color: #00ED64;'>Check-in Successful</h1>
-            <p style='color: #8899A6;'>Welcome to Room {roomNumber}, {firstName}.</p>
-            <p style='color: #8899A6;'>See attached image for exit pass.</p>
-            <p style='font-size: 14px;'>Passcode: <br/> 
-               <span style='font-family: monospace; font-size: 18px; color: #00ED64;'>{Utils.GetPassCodeUtility(data)}</span>
-            </p>
-        </div>",
-
-      // Add the file mapping to Brevo's attachment array metadata
-      attachment = new[]
+        if (_settings == null)
         {
-            new
-            {
-                content = base64QrCode,
-                name = "exit-pass.png"
-            }
+            throw new ArgumentNullException("Entire other setting is empty");
         }
+        if (string.IsNullOrEmpty(_settings.SystemEmail))
+        {
+            throw new InvalidOperationException("OtherSettings:SystemEmail is null or empty! Check your environment variables.");
+        }
+        if (string.IsNullOrEmpty(_settings.AppPassword))
+        {
+            throw new InvalidOperationException("OtherSettings:AppPassword is null or empty! Check your environment variables.");
+        }
+    }
+
+    public async Task SendPasswordResetEmailAsync(string email, string companyName, string resetToken)
+    {
+        string environment = _configuration["OtherSettings:CurrentEnvironment"] ?? "dev";
+
+        // Fix: point to Prod vs Dev correctly
+        string? url = environment == "prod"
+            ? _configuration["OtherSettings:FrontEndUrlProd"]
+            : _configuration["OtherSettings:FrontEndUrlDev"];
+
+        if (string.IsNullOrEmpty(url) || url == "placeholder")
+        {
+            url = "http://localhost:3000";
+        }
+
+        string resetLink = $"{url}/code/reset?token={Uri.EscapeDataString(resetToken)}&email={Uri.EscapeDataString(email)}";
+
+        var emailPayload = new
+        {
+            sender = new { name = "Support Team", email = _settings.SystemEmail },
+            to = new[] { new { email = email, name = companyName } },
+            subject = "Password Reset Request",
+
+            htmlContent = $@"
+                <div style='background-color: #ffffff; color: #111111; padding: 40px 20px; font-family: -apple-system, BlinkMacSystemFont, ""Segoe UI"", Roboto, Helvetica, Arial, sans-serif; max-width: 500px; margin: 0 auto; line-height: 1.5;'>
+                    <h2 style='color: #111111; font-size: 20px; font-weight: 600; margin-bottom: 16px; text-align: left;'>Reset Your Password</h2>
+                    
+                    <p style='color: #555555; font-size: 14px; margin-bottom: 8px;'>Hi {companyName},</p>
+                    <p style='color: #555555; font-size: 14px; margin-bottom: 24px;'>We received a request to reset your password. Click the button below to set up a new one:</p>
+                    <p style='color: #555555; font-size: 14px; margin-bottom: 24px;'>You reset code is {resetToken}</p>
+                    
+                    <div style='margin: 28px 0;'>
+                        <a href='{resetLink}' style='background-color: #10B981; color: #ffffff; padding: 10px 18px; text-decoration: none; font-size: 14px; font-weight: 500; border-radius: 4px; display: inline-block;'>Reset password</a>
+                    </div>
+
+                    <p style='font-size: 13px; color: #888888; margin-top: 32px; border-top: 1px solid #f0f0f0; padding-top: 16px;'>
+                        If you didn't request a password reset, you can safely ignore this email.
+                    </p>
+                </div>"
     };
 
-    // 3. Dispatch the explicit HttpRequestMessage wrapper
-    var request = new HttpRequestMessage(HttpMethod.Post, _setings.BrevoLink);
-    request.Content = JsonContent.Create(emailPayload);
+        // 3. Dispatch the HttpRequestMessage wrapper
+        var request = new HttpRequestMessage(HttpMethod.Post, _settings.BrevoLink);
+        request.Content = JsonContent.Create(emailPayload);
+        request.Headers.Add("api-key", _settings.ApiKey!.Trim());
 
-    request.Headers.Add("api-key", _setings.ApiKey!.Trim());
+        var response = await _httpClient.SendAsync(request);
 
-    var response = await _httpClient.SendAsync(request);
-
-    if (!response.IsSuccessStatusCode)
-    {
-      string errorLog = await response.Content.ReadAsStringAsync();
-      throw new Exception($"Brevo submission failed: {response.StatusCode} - {errorLog}");
+        if (!response.IsSuccessStatusCode)
+        {
+            string errorLog = await response.Content.ReadAsStringAsync();
+            throw new Exception($"Brevo submission failed: {response.StatusCode}\n{errorLog}");
+        }
     }
-  }
 }
 
 public static class Utils
 {
-  public static string GetPassCodeUtility(string data)
-  {
-    int positionOfPeriod = data.IndexOf('.');
-    return data.Substring(0, positionOfPeriod);
-  }
-  public static string GetRoomIdUtility(string data)
-  {
-    int positionOfPeriod = data.IndexOf('.');
-    return data.Substring(positionOfPeriod);
-  }
-  public static string GeneratePasscode(int roomId)
-  {
-    int passcode = RandomNumberGenerator.GetInt32(1000, 10000);
-    string result = $"{passcode.ToString()}.{roomId.ToString()}";
-    return result;
-  }
+    public static string GenerateNumericResetCode()
+    {
+        //random 6-digit code
+        int code = RandomNumberGenerator.GetInt32(100000, 1000000);
+        return code.ToString();
+    }
+    public static string GetPassCodeUtility(string data)
+    {
+        int positionOfPeriod = data.IndexOf('.');
+        return data.Substring(0, positionOfPeriod);
+    }
+    public static string GetRoomIdUtility(string data)
+    {
+        int positionOfPeriod = data.IndexOf('.');
+        return data.Substring(positionOfPeriod);
+    }
+    public static string GeneratePasscode(int roomId)
+    {
+        int passcode = RandomNumberGenerator.GetInt32(1000, 10000);
+        string result = $"{passcode.ToString()}.{roomId.ToString()}";
+        return result;
+    }
 }

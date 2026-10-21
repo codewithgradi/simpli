@@ -41,7 +41,6 @@ const BusinessLogForm = () => {
   const getFriendlyErrorMessage = (err: any): string => {
     if (!err) return "Invalid email or password. Please try again.";
 
-    // Extract raw error string or object data
     let errorString = "";
     if (typeof err === "string") {
       errorString = err;
@@ -58,8 +57,14 @@ const BusinessLogForm = () => {
       }
     }
 
-    // Translate backend status / details to user-friendly messages
     const lowerError = errorString.toLowerCase();
+
+    if (
+      lowerError.includes("deactivated") ||
+      lowerError.includes("reactivate")
+    ) {
+      return "Your account is deactivated. Please reactivate your profile to continue.";
+    }
 
     if (lowerError.includes("lockedout") || lowerError.includes("locked")) {
       return "Your account has been temporarily locked due to multiple failed attempts. Please try again later or reset your password.";
@@ -78,7 +83,6 @@ const BusinessLogForm = () => {
       return "No account found with this email address.";
     }
 
-    // Fallback if it's some other descriptive message, but ensure it's not a raw JSON blob
     if (errorString.startsWith("{") || errorString.startsWith("[")) {
       return "Invalid email or password. Please try again.";
     }
@@ -146,18 +150,29 @@ const BusinessLogForm = () => {
 
       setIsSubmitted(true);
 
-      localStorage.setItem("accessToken", data.accessToken);
-      localStorage.setItem("refreshToken", data.refreshToken); 
+      // 👉 Save tokens securely using js-cookie with strict matching attributes
+      Cookies.set("jwt", data.accessToken, {
+        expires: 1,
+        path: "/",
+        sameSite: "lax",
+      });
 
-      const expiresInDays = data.expiresIn ? data.expiresIn / 86400 : 1;
-      Cookies.set("jwt", data.accessToken, { expires: expiresInDays });
+      Cookies.set("accessToken", data.accessToken, {
+        expires: 1,
+        path: "/",
+        sameSite: "lax",
+      });
 
       if (data.refreshToken) {
-        Cookies.set("refreshToken", data.refreshToken, { expires: 7 });
+        Cookies.set("refreshToken", data.refreshToken, {
+          expires: 7,
+          path: "/",
+          sameSite: "lax",
+        });
       }
 
-      router.push("/console");
-      router.refresh();
+      // 👉 Hard redirect into the console
+      window.location.href = "/console";
     } catch (err: any) {
       setShowNotification({
         show: true,
@@ -216,9 +231,17 @@ const BusinessLogForm = () => {
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-[13px] font-bold text-[#001e2b] uppercase tracking-wide">
-                Password
-              </label>
+              <div className="flex items-center justify-between">
+                <label className="text-[13px] font-bold text-[#001e2b] uppercase tracking-wide">
+                  Password
+                </label>
+                <Link
+                  href="/code"
+                  className="text-xs text-gray-500 hover:text-[#00ed64] transition-colors font-medium"
+                >
+                  Forgot password?
+                </Link>
+              </div>
               <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
@@ -276,7 +299,7 @@ const BusinessLogForm = () => {
             </button>
           </form>
 
-          <div className="mt-auto pt-10 border-t border-gray-100">
+          <div className="mt-auto pt-10 border-t border-gray-100 space-y-2">
             <p className="text-sm text-gray-500">
               Don't have an account?{" "}
               <Link
@@ -286,13 +309,10 @@ const BusinessLogForm = () => {
                 Sign Up
               </Link>
             </p>
-          </div>
-
-          <div className="mt-4 pt-4 border-t border-gray-100">
             <p className="text-sm text-gray-500">
               Profile deactivated?{" "}
               <Link
-                href="/console/reactivate"
+                href="/reactivate"
                 className="text-red-600 underline font-semibold hover:underline"
               >
                 Reactivate Profile

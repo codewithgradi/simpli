@@ -5,6 +5,8 @@ using Scalar.AspNetCore;
 using simpli.Api.Mcp;
 using simpli.Api.Middlewares;
 using simpli.Infrastructure;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 // 1. Load .env BEFORE creating builder so Environment.GetEnvironmentVariable is populated
 var envPath = Path.Combine(Directory.GetCurrentDirectory(), "../.env");
@@ -36,13 +38,13 @@ builder.Services.AddControllers().AddJsonOptions(opt =>
 // Background email processing
 builder.Services.AddHangfire(config => config.UseMemoryStorage());
 builder.Services.AddHangfireServer();
-
+builder.Services.AddMemoryCache();
 builder.Services
     .AddApiVersionForBackend()
     .LoadEnvironment(builder.Configuration)
     .ConfigureSqlDB(builder.Configuration)
     .AddInfrastructureServices(builder.Configuration)
-    .IdentityConfigurationsScope()
+    .IdentityConfigurationsScope(builder.Configuration)
     .AllowCors(builder.Configuration)
     .AddMappers()
     .ConfigureMcp()

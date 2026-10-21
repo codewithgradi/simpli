@@ -130,21 +130,34 @@ const RoomManagement = () => {
     e.preventDefault();
     if (!selectedRoom) return;
 
+    // Safely resolve operational status to ensure it's always sent as a valid number
+    let parsedStatus = 0;
+    if (typeof selectedRoom.status === "number") {
+      parsedStatus = selectedRoom.status;
+    } else {
+      parsedStatus =
+        RoomStatus[selectedRoom.status as keyof typeof RoomStatus] ?? 0;
+    }
+
     const updatePayload: UpdateRoom = {
       roomNumber: selectedRoom.roomNumber,
       floor: Number(selectedRoom.floor),
       type: selectedRoom.type,
-      status: Number(selectedRoom.status),
+      status: parsedStatus,
     };
 
-    await updateRoom(updatePayload, parseInt(selectedRoom.id, 10));
+    try {
+      await updateRoom(updatePayload, parseInt(selectedRoom.id, 10));
 
-    if (error) {
-      setNotification({ show: true, msg: error, type: "negative" });
-    } else {
       setNotification({ show: true, msg: "Room updated!", type: "positive" });
       setIsEditModalOpen(false);
       handleRefresh();
+    } catch (err: any) {
+      setNotification({
+        show: true,
+        msg: err?.message || error || "Failed to update room",
+        type: "negative",
+      });
     }
   };
 
@@ -486,9 +499,9 @@ const RoomManagement = () => {
                     value={
                       typeof selectedRoom.status === "number"
                         ? selectedRoom.status
-                        : RoomStatus[
+                        : (RoomStatus[
                             selectedRoom.status as keyof typeof RoomStatus
-                          ]
+                          ] ?? 0)
                     }
                     onChange={(e) =>
                       setSelectedRoom({

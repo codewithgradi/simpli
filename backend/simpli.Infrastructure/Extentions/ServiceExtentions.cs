@@ -11,6 +11,8 @@ using OpenAI;
 using System.ClientModel;
 using simpli.Application.Interfaces;
 using simpli.Infrastructure.Repository;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 namespace simpli.Infrastructure;
 
 public static class ServiceExtentions
@@ -19,7 +21,7 @@ public static class ServiceExtentions
   {
     services
     .AddMcpServer()
-    .WithHttpTransport(opt=>
+    .WithHttpTransport(opt =>
     {
       opt.Stateless = true;
     })
@@ -52,39 +54,39 @@ public static class ServiceExtentions
     return services;
   }
   public static IServiceCollection ConfigureSqlDB(this IServiceCollection services, IConfiguration config)
-{
+  {
     var envType = config["OtherSettings:CurrentEnviroment"]?.ToLower().Trim(' ', '"');
 
     if (string.IsNullOrWhiteSpace(envType) || envType.Equals("placeholder", StringComparison.OrdinalIgnoreCase))
     {
-        envType = "dev";
+      envType = "dev";
     }
 
     services.AddDbContext<AppDbContext>(opt =>
     {
-        string? rawConnectionString = envType switch
-        {
-            "dev" => config["ConnectionStrings:DevDB"],
-            "prod" => config["ConnectionStrings:ProdDB"],
-            _ => throw new InvalidOperationException($"Invalid environment target '{envType}'.")
-        };
+      string? rawConnectionString = envType switch
+      {
+        "dev" => config["ConnectionStrings:DevDB"],
+        "prod" => config["ConnectionStrings:ProdDB"],
+        _ => throw new InvalidOperationException($"Invalid environment target '{envType}'.")
+      };
 
-        string? connectionString = rawConnectionString?.Trim(' ', '"', '\'');
+      string? connectionString = rawConnectionString?.Trim(' ', '"', '\'');
 
-        if (string.IsNullOrWhiteSpace(connectionString) || 
-            connectionString.Equals("placeholder", StringComparison.OrdinalIgnoreCase))
-        {
-            throw new InvalidOperationException(
-                $"The connection string for '{envType}' is missing or still set to 'placeholder'. " +
-                $"Checked key 'ConnectionStrings:{(envType == "dev" ? "DevDB" : "ProdDB")}'.");
-        }
+      if (string.IsNullOrWhiteSpace(connectionString) ||
+          connectionString.Equals("placeholder", StringComparison.OrdinalIgnoreCase))
+      {
+        throw new InvalidOperationException(
+            $"The connection string for '{envType}' is missing or still set to 'placeholder'. " +
+            $"Checked key 'ConnectionStrings:{(envType == "dev" ? "DevDB" : "ProdDB")}'.");
+      }
 
-        opt.UseNpgsql(connectionString).UseSnakeCaseNamingConvention();
+      opt.UseNpgsql(connectionString).UseSnakeCaseNamingConvention();
     });
 
     return services;
-}
-  public static IServiceCollection IdentityConfigurationsScope(this IServiceCollection services)
+  }
+  public static IServiceCollection IdentityConfigurationsScope(this IServiceCollection services, IConfiguration configuration)
   {
     services.AddIdentityApiEndpoints<AppUser>(options =>
     {
@@ -93,6 +95,36 @@ public static class ServiceExtentions
     })
     .AddEntityFrameworkStores<AppDbContext>()
     .AddDefaultTokenProviders();
+
+    // Configure JWT Bearer and lock in the default schemes here
+    services.AddAuthentication(options =>
+    {
+      options.DefaultAuthenticateScheme = "Bearer";
+      options.DefaultChallengeScheme = "Bearer";
+      options.DefaultScheme = "Bearer";
+    })
+    .AddJwtBearer("Bearer", options =>
+    {
+      options.TokenValidationParameters = new TokenValidationParameters
+      {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = configuration["Jwt:Issuer"],
+        ValidAudience = configuration["Jwt:Audience"],
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:Key"]!)),
+        ClockSkew = TimeSpan.Zero
+      };
+      options.Events = new Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerEvents
+      {
+        OnAuthenticationFailed = context =>
+        {
+          Console.WriteLine($"JWT Authentication Failed: {context.Exception.Message}");
+          return Task.CompletedTask;
+        }
+      };
+    });
 
     services.AddAuthorization();
 
@@ -114,7 +146,8 @@ public static class ServiceExtentions
     services.AddScoped<SystemEmailService>();
 
     services.AddHttpClient<IEmailService, EmailService>();
-    services.AddScoped<IAnalyticsService,AnalyticsService>();
+    services.AddScoped<IAnalyticsService, AnalyticsService>();
+    services.AddScoped<ITokenService, TokenService>();
 
     return services;
   }
@@ -151,7 +184,7 @@ public static class ServiceExtentions
     return services;
   }
   public static IServiceCollection AddOpenAI(this IServiceCollection services, IConfiguration configuration)
-{
+  {
     string apiKey = configuration["OpenAi:ApiKey"]
         ?? throw new InvalidOperationException("Missing OpenAI api key in configuration.");
 
@@ -163,12 +196,12 @@ public static class ServiceExtentions
         openRouterUrl.Equals("Placeholder", StringComparison.OrdinalIgnoreCase) ||
         !Uri.TryCreate(openRouterUrl, UriKind.Absolute, out var openRouterUri))
     {
-        openRouterUri = new Uri("https://openrouter.ai/api/v1");
+      openRouterUri = new Uri("https://openrouter.ai/api/v1");
     }
 
     var openAiOptions = new OpenAIClientOptions
     {
-        Endpoint = openRouterUri
+      Endpoint = openRouterUri
     };
 
     var openAiClient = new OpenAIClient(new ApiKeyCredential(apiKey), openAiOptions);
@@ -184,5 +217,5 @@ public static class ServiceExtentions
     services.AddSingleton<IChatClient>(chatClient);
 
     return services;
-}
+  }
 }

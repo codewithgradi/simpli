@@ -1,3 +1,4 @@
+// src/components/Dashboard.tsx (or HotelDashboard.tsx)
 "use client";
 
 import { useState } from "react";
@@ -7,8 +8,8 @@ import {
   Hotel,
   ActivityIcon,
   HotelIcon,
-  LogOut,
   Settings,
+  LogOut,
   Bell,
   ShieldCheck,
   AlertTriangle,
@@ -22,19 +23,16 @@ import NotificationCenter from "./SystemNotification";
 import DashboardSkeleton from "./DashboardSkeleton";
 import RoomManagement from "./ViewRooms";
 import { useRouter } from "next/navigation";
-import Notification from "./Notification"; // Toast banner component
 import { useAuthService } from "@/hooks/useAuthService";
-import NotificationToast from "./NotificationLogoutToast";
+import Cookies from "js-cookie";
 
 export default function HotelDashboard() {
   const [activeTab, setActiveTab] = useState("Dashboard");
   const [loading] = useState(false);
   const [showNotifs, setShowNotifs] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-  const [isloggedIn, setIsLoggedIn] = useState(true);
   const router = useRouter();
 
-  // Consume the logout function from auth hook
   const { logout } = useAuthService();
 
   const navigation = [
@@ -58,22 +56,20 @@ export default function HotelDashboard() {
   const handleLogOut = async () => {
     try {
       await logout();
-      setIsLoggedIn(false);
-      localStorage.removeItem("accessToken");
-      router.push("/login");
     } catch (error) {
       console.log(error);
+    } finally {
+      // Clear local storage and cookies cleanly on logout
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
+      Cookies.remove("jwt", { path: "/" });
+      Cookies.remove("accessToken", { path: "/" });
+      Cookies.remove("refreshToken", { path: "/" });
+
+      router.push("/login");
+      router.refresh();
     }
   };
-//Triger
-  if (!isloggedIn)
-    return (
-      <NotificationToast
-        onClose={() => setIsLoggedIn(false)}
-        message="Logged out successfully"
-        type="positive"
-      />
-    );
 
   if (loading) return <DashboardSkeleton />;
 

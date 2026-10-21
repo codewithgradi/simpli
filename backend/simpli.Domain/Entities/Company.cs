@@ -9,7 +9,7 @@ public class Company
   public string? RegistrationNumber { get; set; }
   public string? ContactNumber { get; set; }
   public bool isProfileComplete { get; set; }
-  public bool isDeleted { get; set; }
+  public bool isDeleted { get; set; } = false;
   public List<Notification>? Notifications { get; set; }
   public AddressContent? Address { get; set; }
   public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

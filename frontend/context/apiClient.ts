@@ -1,18 +1,19 @@
 // src/lib/apiClient.ts
+import Cookies from "js-cookie";
 
 export const API_BASE_URL =
   process.env.NODE_ENV == "development"
     ? process.env.NEXT_PUBLIC_DEVELOPMENT_URL
     : process.env.NEXT_PUBLIC_PRODUCTION_URL;
 
-// Helper to get headers with the access token attached
+// Helper to get headers with the access token attached from cookies using js-cookie
 const getHeaders = () => {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
   };
 
   if (typeof window !== "undefined") {
-    const token = localStorage.getItem("accessToken");
+    const token = Cookies.get("jwt") || Cookies.get("accessToken");
     if (token) {
       headers["Authorization"] = `Bearer ${token}`;
     }
@@ -40,7 +41,6 @@ async function handleResponse<T>(
   options: RequestInit,
   originalFetch: typeof fetch,
 ): Promise<T> {
-  // If response is 401 Unauthorized, attempt automatic token refresh
   if (
     response.status === 401 &&
     !endpoint.includes("/refresh") &&
@@ -54,24 +54,19 @@ async function handleResponse<T>(
       isRefreshing = true;
 
       try {
-        const storedRefreshToken = localStorage.getItem("refreshToken");
+        const storedRefreshToken = Cookies.get("refreshToken");
 
-        // Hit your backend refresh endpoint and send the refresh token in the JSON body
-        const refreshResponse = await originalFetch(
-          `${API_BASE_URL}/refresh`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ refreshToken: storedRefreshToken }),
-          },
-        );
+        const refreshResponse = await originalFetch(`${API_BASE_URL}/refresh`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ refreshToken: storedRefreshToken }),
+        });
 
         if (!refreshResponse.ok) {
           throw new Error("Refresh token expired or invalid");
         }
 
         const refreshData = await refreshResponse.json();
-
         const newAccessToken = refreshData.accessToken;
         const newRefreshToken = refreshData.refreshToken;
 
@@ -79,16 +74,28 @@ async function handleResponse<T>(
           throw new Error("No access token received from refresh route");
         }
 
-        // Save new tokens
-        localStorage.setItem("accessToken", newAccessToken);
+        // Save new tokens using js-cookie with strict matching parameters
+        Cookies.set("jwt", newAccessToken, {
+          expires: 1,
+          path: "/",
+          sameSite: "lax",
+        });
+        Cookies.set("accessToken", newAccessToken, {
+          expires: 1,
+          path: "/",
+          sameSite: "lax",
+        });
         if (newRefreshToken) {
-          localStorage.setItem("refreshToken", newRefreshToken);
+          Cookies.set("refreshToken", newRefreshToken, {
+            expires: 7,
+            path: "/",
+            sameSite: "lax",
+          });
         }
 
         isRefreshing = false;
         onRefreshed(newAccessToken);
 
-        // Retry the original failed request with the new access token
         const newHeaders = {
           ...(options.headers as Record<string, string>),
           Authorization: `Bearer ${newAccessToken}`,
@@ -115,15 +122,15 @@ async function handleResponse<T>(
         isRefreshing = false;
         refreshSubscribers = [];
 
-        // Clear session and redirect to login if refresh fails
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("refreshToken");
+        // Clear session cookies and redirect to login if refresh fails
+        Cookies.remove("jwt", { path: "/" });
+        Cookies.remove("accessToken", { path: "/" });
+        Cookies.remove("refreshToken", { path: "/" });
         window.location.href = "/login";
         throw refreshError;
       }
     }
 
-    // If another request is already refreshing, queue this one until the new token arrives
     return new Promise((resolve, reject) => {
       subscribeTokenRefresh(async (token: string) => {
         try {

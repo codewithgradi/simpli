@@ -4,6 +4,8 @@ import {
   LoginResponse,
   authService,
   RegisterRequest,
+  SendCode,
+  ResetPassword,
 } from "@/services/authService";
 import { useState } from "react";
 
@@ -53,7 +55,7 @@ export function useAuthService() {
     setLoading(true);
     setError(null);
     try {
-      const res = authService.register(body);
+      const res = await authService.register(body);
       return res;
     } catch (err: any) {
       setError(err.message || "Registration failed");
@@ -62,6 +64,32 @@ export function useAuthService() {
       setLoading(false);
     }
   };
+  const sendCode = async (body: SendCode) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await authService.sendCode(body);
+      return res;
+    } catch (err: any) {
+      setError(err.message || "failed to send reset code");
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+  const resetPassword = async (body: ResetPassword) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = authService.resetPassword(body);
+      return res;
+    } catch (err: any) {
+      setError(err.message || "failed to reset password");
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  return {login,logout,register,refresh,error,loading}
+  return {login,logout,register,refresh,sendCode,resetPassword,error,loading}
 }

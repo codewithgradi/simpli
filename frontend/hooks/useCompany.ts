@@ -1,4 +1,5 @@
 "use client";
+import { LoginRequest } from "@/services/authService";
 import {
   Company,
   companySevice,
@@ -53,11 +54,11 @@ export function useCompany() {
     }
   };
 
-  const reactivate = async ()=>{
+  const reactivate = async (data:LoginRequest)=>{
      setLoading(true);
      setError(null);
      try {
-       var res = await companySevice.reactivate();
+       var res = await companySevice.reactivate(data);
        return res;
      } catch (err: any) {
        setError(err.message || "Could not reactivate company");

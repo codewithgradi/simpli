@@ -1,7 +1,10 @@
 using System.Security.Claims;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using simpli.Application.Services;
 using simpli.Domain.Entities;
 
@@ -13,10 +16,14 @@ namespace simpli.Api.Controllers
   public class CompanyController : ControllerBase
   {
     private readonly CompanyService _companyService;
+    private readonly UserManager<AppUser> _userManager;
+    private readonly AppDbContext _context;
 
-    public CompanyController(CompanyService service)
+    public CompanyController(CompanyService service, UserManager<AppUser> userManager,AppDbContext context)
     {
       _companyService = service;
+      _userManager = userManager;
+      _context=context;
 
     }
 
@@ -75,15 +82,40 @@ namespace simpli.Api.Controllers
       await _companyService.SoftDeleteCompanyProfile(companyId);
       return NoContent();
     }
-    [Authorize]
     [HttpPatch("reactivate")]
-    public async Task<IActionResult> ReactivateProfile()
+    public async Task<IActionResult> ReactivateProfile([FromBody] LoginRequest loginRequest)
     {
-      var companyId = Convert.ToInt32(User.FindFirst("CompanyId").Value);
-      if (companyId == null) return Unauthorized("Invalid Session");
-      await _companyService.ReactivateProfile(companyId);
-      return NoContent();
-    }
+      if (!ModelState.IsValid)
+      {
+        return BadRequest(new { message = "Email and password are required." });
+      }
 
-  }
-}
+      // 1. Fetch user and include the Company navigation property safely via your DbContext
+      var user = await _context.Users
+          .Include(u => u.Company)
+          .FirstOrDefaultAsync(u => u.Email == loginRequest.Email);
+
+      if (user == null || !await _userManager.CheckPasswordAsync(user, loginRequest.Password))
+      {
+        return Unauthorized(new { message = "Invalid email or password." });
+      }
+
+      // 2. Ensure the user has a CompanyId assigned
+      if (user.CompanyId == 0 || user.Company == null)
+      {
+        return BadRequest(new { message = "Associated company profile could not be found." });
+      }
+
+      // 3. Optional: Verify the company actually exists in the database to prevent KeyNotFoundException
+      var companyExists = await _context.Companies.AnyAsync(c => c.Id == user.CompanyId);
+      if (!companyExists)
+      {
+        return NotFound(new { message = "Company record no longer exists in the system." });
+      }
+
+      // 4. Safe to call reactivation
+      await _companyService.ReactivateProfile(user.CompanyId);
+
+      return Ok(new { message = "Profile successfully restored." });
+    }
+  }}

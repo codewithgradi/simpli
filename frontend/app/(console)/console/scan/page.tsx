@@ -313,87 +313,89 @@ export default function GuardExitPage() {
 
         {/* Content Panel */}
         <section className="flex-1 bg-white border border-slate-200 rounded-2xl p-5 md:p-6 flex flex-col shadow-sm min-h-[520px]">
-          {/* TAB 1: SCANNER */}
-          {activeTab === "scanner" && (
-            <div className="flex-1 flex flex-col items-center justify-center max-w-lg mx-auto w-full">
-              {/* Gate / Room Configuration */}
-              <div className="w-full mb-5 bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2 text-slate-700 text-xs font-semibold uppercase tracking-wider">
-                  <MapPin size={16} className="text-emerald-600" />
-                  <span>Terminal Gate ID:</span>
-                </div>
-                <input
-                  type="text"
-                  value={roomId}
-                  onChange={(e) => setRoomId(e.target.value)}
-                  placeholder="Gate ID"
-                  className="bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-sm text-slate-900 font-semibold focus:outline-none focus:border-emerald-600 w-36 shadow-sm"
-                />
+          {/* TAB 1: SCANNER - Rendered ONLY when active tab is scanner */}
+          <div
+            className={`flex-1 flex-col items-center justify-center max-w-lg mx-auto w-full ${activeTab === "scanner" ? "flex" : "hidden"}`}
+          >
+            {/* Gate / Room Configuration */}
+            <div className="w-full mb-5 bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2 text-slate-700 text-xs font-semibold uppercase tracking-wider">
+                <MapPin size={16} className="text-emerald-600" />
+                <span>Terminal Gate ID:</span>
               </div>
+              <input
+                type="text"
+                value={roomId}
+                onChange={(e) => setRoomId(e.target.value)}
+                placeholder="Gate ID"
+                className="bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-sm text-slate-900 font-semibold focus:outline-none focus:border-emerald-600 w-36 shadow-sm"
+              />
+            </div>
 
-              {/* Camera Scanner Viewport */}
-              <div
-                className={`relative w-full p-1.5 rounded-2xl transition-all duration-300 ${
-                  status === "success"
-                    ? "bg-emerald-500 shadow-lg shadow-emerald-500/20"
-                    : status === "error"
-                      ? "bg-red-500 shadow-lg shadow-red-500/20"
-                      : "bg-slate-200"
-                }`}
-              >
-                <div className="bg-slate-900 rounded-xl overflow-hidden p-3 min-h-[280px] flex items-center justify-center">
+            {/* Camera Scanner Viewport */}
+            <div
+              className={`relative w-full p-1.5 rounded-2xl transition-all duration-300 ${
+                status === "success"
+                  ? "bg-emerald-500 shadow-lg shadow-emerald-500/20"
+                  : status === "error"
+                    ? "bg-red-500 shadow-lg shadow-red-500/20"
+                    : "bg-slate-200"
+              }`}
+            >
+              <div className="bg-slate-900 rounded-xl overflow-hidden p-3 min-h-[280px] flex items-center justify-center">
+                {activeTab === "scanner" && (
                   <ScannerComponent onResult={handleScan} />
-                </div>
-
-                {/* Status Overlay */}
-                {status !== "idle" && (
-                  <div
-                    className={`absolute inset-0 z-20 flex flex-col items-center justify-center backdrop-blur-md rounded-2xl p-6 transition-all ${
-                      status === "success"
-                        ? "bg-emerald-950/90 text-white"
-                        : status === "error"
-                          ? "bg-red-950/90 text-white"
-                          : "bg-slate-900/90 text-white"
-                    }`}
-                  >
-                    {status === "loading" && (
-                      <Loader2
-                        className="animate-spin text-emerald-400 mb-3"
-                        size={48}
-                      />
-                    )}
-                    {status === "success" && (
-                      <div className="bg-emerald-500 p-3 rounded-full mb-3 text-white">
-                        <CheckCircle2 size={40} />
-                      </div>
-                    )}
-                    {status === "error" && (
-                      <AlertCircle className="text-red-400 mb-3" size={48} />
-                    )}
-
-                    <p className="text-lg font-bold text-center leading-snug">
-                      {scanMessage}
-                    </p>
-                  </div>
                 )}
               </div>
 
-              {/* Guidance Footer */}
-              <div className="mt-5 w-full bg-slate-50 border border-slate-200 p-4 rounded-xl flex items-center gap-3">
-                <div className="bg-emerald-100 p-2.5 rounded-lg text-emerald-700 shrink-0">
-                  <Camera size={20} />
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wide">
-                    Scanner Ready
+              {/* Status Overlay */}
+              {status !== "idle" && (
+                <div
+                  className={`absolute inset-0 z-20 flex flex-col items-center justify-center backdrop-blur-md rounded-2xl p-6 transition-all ${
+                    status === "success"
+                      ? "bg-emerald-950/90 text-white"
+                      : status === "error"
+                        ? "bg-red-950/90 text-white"
+                        : "bg-slate-900/90 text-white"
+                  }`}
+                >
+                  {status === "loading" && (
+                    <Loader2
+                      className="animate-spin text-emerald-400 mb-3"
+                      size={48}
+                    />
+                  )}
+                  {status === "success" && (
+                    <div className="bg-emerald-500 p-3 rounded-full mb-3 text-white">
+                      <CheckCircle2 size={40} />
+                    </div>
+                  )}
+                  {status === "error" && (
+                    <AlertCircle className="text-red-400 mb-3" size={48} />
+                  )}
+
+                  <p className="text-lg font-bold text-center leading-snug">
+                    {scanMessage}
                   </p>
-                  <p className="text-xs text-slate-600 font-medium">
-                    Position visitor pass QR code in front of the lens.
-                  </p>
                 </div>
+              )}
+            </div>
+
+            {/* Guidance Footer */}
+            <div className="mt-5 w-full bg-slate-50 border border-slate-200 p-4 rounded-xl flex items-center gap-3">
+              <div className="bg-emerald-100 p-2.5 rounded-lg text-emerald-700 shrink-0">
+                <Camera size={20} />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wide">
+                  Scanner Ready
+                </p>
+                <p className="text-xs text-slate-600 font-medium">
+                  Position visitor pass QR code in front of the lens.
+                </p>
               </div>
             </div>
-          )}
+          </div>
 
           {/* TAB 2: AI GUARD ASSISTANT */}
           {activeTab === "chat" && (

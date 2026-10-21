@@ -62,7 +62,7 @@ namespace simpli.Api.Controllers
       [FromBody] CreateRoomDto roomDto)
     {
       if (!ModelState.IsValid) return BadRequest(ModelState);
-      var companyIdClaimString = User.FindFirstValue("CompanyID");
+      var companyIdClaimString = User.FindFirstValue("CompanyId");
       if (string.IsNullOrEmpty(companyIdClaimString) || !int.TryParse(companyIdClaimString, out int companyId))
       {
         return Unauthorized("No company in session");
