@@ -25,7 +25,7 @@ public class RoomRepo : IRoomRepo
         var queryable = _context.Rooms
             .Where(r => r.CompanyId == companyId);
 
-        if (query.IsAvailable)
+        if (query?.IsAvailable == true)
         {
             queryable = queryable.Where(x => x.Status == RoomStatus.Available);
         }

@@ -18,7 +18,6 @@ export default function UnsupportedDeviceModal() {
   return (
     <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-[100] p-4 transition-all duration-200">
       <div className="bg-white border border-slate-100 w-full max-w-sm rounded-2xl shadow-xl p-6 flex flex-col items-center text-center space-y-5 animate-in fade-in zoom-in-95 duration-200">
-        {/* Soft Minimal Green Icon Container */}
         <div className="w-11 h-11 rounded-full bg-[#00ed64]/10 border border-[#00ed64]/30 flex items-center justify-center text-[#00a843]">
           <svg
             className="w-5 h-5"

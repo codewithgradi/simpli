@@ -23,7 +23,7 @@ namespace simpli.Api.Mcp
             var service = scope.ServiceProvider.GetRequiredService<VisitorService>();
             var query = new GetVisitorsQueryParameters();
             var visitors = await service.GetAllVisitors(query, companyId);
-            return visitors;
+            return  visitors;
         }
         
         [McpServerTool(Name="get_one_visitor"), Description("Returns on visitor from visitors table")]

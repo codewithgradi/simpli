@@ -7,7 +7,7 @@ public class QueryParameters
   public int Page
   {
     get => _Page;
-    set => _Page = value <= 0 ? 1 : value; 
+    set => _Page = value <= 0 ? 1 : value;
   }
 
   public int Size
@@ -16,8 +16,8 @@ public class QueryParameters
     set => _size = value <= 0 ? 10 : Math.Min(value, _maxSize);
   }
 
-  public string SortOrder { get; set; } = "asc";
-  public string SortBy { get; set; } = string.Empty;
+  public string SortBy { get; set; } = "CreatedAt";
+  public string SortOrder { get; set; } = "desc";
   public string CmpId { get; set; } = string.Empty;
-  public bool IsAvailable { get; set; } 
+  public bool? IsAvailable { get; set; }
 }
