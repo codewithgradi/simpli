@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import UnsupportedDeviceModal from '@/components/UnSupportedDeviceModal';
 
 export default function ConsoleLayout({ children }: { children: React.ReactNode }) {
   const [isReady, setIsReady] = useState(false);
@@ -14,5 +15,8 @@ export default function ConsoleLayout({ children }: { children: React.ReactNode 
 
   if (!isReady) return null; // Or your ProfileSkeleton
 
-  return <>{children}</>;
+  return (<div className="min-h-screen bg-[#001e2b]">
+      <UnsupportedDeviceModal />
+      {children}
+    </div>);
 }

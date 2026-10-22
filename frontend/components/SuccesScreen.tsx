@@ -91,9 +91,9 @@ export default function SuccessScreen({ data }: SuccessScreenProps) {
               level="H"
               includeMargin={false}
             />
-            <span className="mt-3 text-xs font-mono font-bold text-gray-700 tracking-wider">
+            {/* <span className="mt-3 text-xs font-mono font-bold text-gray-700 tracking-wider">
               PASSCODE: {data?.passCode || "N/A"}
-            </span>
+            </span> */}
           </div>
 
           {/* Receipt Details */}
