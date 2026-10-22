@@ -39,7 +39,7 @@ export default function GuardExitPage() {
   const { getCompany, loading: companyLoading } = useCompany();
 
   // Scanner & Terminal State
-  const [roomId, setRoomId] = useState(0);
+  const [roomId, setRoomId] = useState("Gate-01");
   const [status, setStatus] = useState<
     "idle" | "loading" | "success" | "error"
   >("idle");
@@ -147,7 +147,7 @@ export default function GuardExitPage() {
     if (isScanningRef.current || status === "loading" || status === "success")
       return;
 
-    if (!roomId || roomId == 0) {
+    if (!roomId.trim()) {
       setStatus("error");
       setScanMessage("Room / Gate ID required");
       setTimeout(() => setStatus("idle"), 3000);
@@ -326,7 +326,7 @@ export default function GuardExitPage() {
               <input
                 type="text"
                 value={roomId}
-                onChange={(e) => setRoomId(parseInt(e.target.value))}
+                onChange={(e) => setRoomId(e.target.value)}
                 placeholder="Gate ID"
                 className="bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-sm text-slate-900 font-semibold focus:outline-none focus:border-emerald-600 w-36 shadow-sm"
               />

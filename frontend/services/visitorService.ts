@@ -35,7 +35,7 @@ export interface Visitor {
 }
 export interface CheckOut {
   passCode: string;
-  roomId: number;
+  roomId: string;
 }
 export interface CheckIn {
   companyId: string;
@@ -73,12 +73,9 @@ export const visitorService = {
   },
   async checkOut(data: CheckOut): Promise<void> {
     
-
     try {
-      // apiClient.post will throw an Error if response.ok is false (e.g. 400 or 500)
-      return await apiClient.patch(`/api/visitor/check-out`, data);
+      return await apiClient.patch(`/api/visitor/check-out`, {...data, roomId: parseInt(data.roomId, 10)});
     } catch (err: any) {
-      // Re-throw so the frontend catch block can read the error message
       throw err;
     }
   },
