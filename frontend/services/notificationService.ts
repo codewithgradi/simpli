@@ -17,6 +17,7 @@ export interface PaginatedObject {
   Page?: number;
   SortBy?: string;
   Size?: number;
+  isRoomAvailable?:boolean;
 }
 
 export const notificationService = {
@@ -26,7 +27,6 @@ export const notificationService = {
 
     const params = new URLSearchParams();
 
-    // Always append parameters with sensible defaults
     params.append("sortOrder", safeQuery.sortOrder || "desc");
     params.append("page", (safeQuery.Page || 1).toString());
     params.append("size", (safeQuery.Size || 10).toString());

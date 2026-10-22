@@ -7,7 +7,7 @@ public class QueryParameters
   public int Page
   {
     get => _Page;
-    set => _Page = value <= 0 ? 1 : value; // Fixed: check 'value', not '_Page'
+    set => _Page = value <= 0 ? 1 : value; 
   }
 
   public int Size
@@ -19,4 +19,5 @@ public class QueryParameters
   public string SortOrder { get; set; } = "asc";
   public string SortBy { get; set; } = string.Empty;
   public string CmpId { get; set; } = string.Empty;
+  public bool IsAvailable { get; set; } 
 }

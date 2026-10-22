@@ -14,6 +14,7 @@ import {
   PieChart,
   BarChart3,
   RotateCw,
+  Calendar,
 } from "lucide-react";
 
 export function FirstView() {
@@ -33,10 +34,10 @@ export function FirstView() {
 
   if (loading && !data) {
     return (
-      <div className="min-h-[450px] flex flex-col items-center justify-center bg-white rounded-2xl border border-slate-200 shadow-sm">
-        <Loader2 className="animate-spin text-[#00ed64] mb-3" size={40} />
-        <p className="text-sm font-semibold text-slate-600">
-          Loading analytics dashboard...
+      <div className="min-h-[420px] flex flex-col items-center justify-center bg-white rounded-xl border border-slate-200/80 shadow-sm">
+        <Loader2 className="animate-spin text-emerald-500 mb-3" size={32} />
+        <p className="text-xs font-semibold text-slate-600">
+          Fetching live metrics...
         </p>
       </div>
     );
@@ -44,115 +45,159 @@ export function FirstView() {
 
   if (error) {
     return (
-      <div className="min-h-[450px] flex flex-col items-center justify-center bg-white rounded-2xl border border-red-200 p-6 text-center shadow-sm">
-        <AlertCircle className="text-red-500 mb-2" size={36} />
-        <h3 className="text-base font-bold text-slate-800">
-          Could not load dashboard data
+      <div className="min-h-[420px] flex flex-col items-center justify-center bg-white rounded-xl border border-rose-200/80 p-8 text-center shadow-sm">
+        <div className="w-12 h-12 rounded-full bg-rose-50 text-rose-500 flex items-center justify-center mb-3 border border-rose-100">
+          <AlertCircle size={22} />
+        </div>
+        <h3 className="text-sm font-semibold text-slate-900">
+          Unable to synchronize dashboard
         </h3>
-        <p className="text-xs text-slate-500 mt-1 max-w-sm">{error}</p>
+        <p className="text-xs text-slate-500 mt-1 max-w-sm leading-relaxed">
+          {error}
+        </p>
         <button
           onClick={fetchDashboardData}
           disabled={loading}
-          className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 text-xs font-bold text-[#001e2b] bg-[#00ed64] rounded-xl hover:bg-[#00c654] transition-all shadow-md disabled:opacity-50"
+          className="mt-5 inline-flex items-center gap-2 px-4 py-2 text-xs font-medium text-slate-900 bg-emerald-400 hover:bg-emerald-500 rounded-lg transition-all shadow-sm disabled:opacity-50"
         >
           <RotateCw size={14} className={loading ? "animate-spin" : ""} />
-          Retry Connection
+          <span>Retry Connection</span>
         </button>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 pb-6">
-     
+    <div className="space-y-6 pb-6 antialiased">
+      {/* SECTION HEADER */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/60 pb-4">
+        <div>
+          <h2 className="text-lg font-bold text-slate-900 tracking-tight">
+            Analytics & Operations Overview
+          </h2>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Real-time telemetry on guest traffic and property capacity.
+          </p>
+        </div>
+        <div className="flex items-center gap-2 text-xs font-medium text-slate-500 bg-slate-100/80 px-3 py-1.5 rounded-lg border border-slate-200/60 w-fit">
+          <Calendar size={14} className="text-slate-400" />
+          <span>Today</span>
+        </div>
+      </div>
 
-      {/* KPI Summary Cards */}
+      {/* KPI SUMMARY CARDS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        <div className="bg-white border border-slate-200 p-4 rounded-2xl shadow-sm flex items-center gap-4">
-          <div className="bg-emerald-50 text-emerald-600 p-3 rounded-xl border border-emerald-100">
-            <Users size={22} />
-          </div>
-          <div>
-            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">
+        {/* Visitors Today */}
+        <div className="bg-white border border-slate-200/80 p-4 rounded-xl shadow-xs hover:border-slate-300 transition-all">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
               Today Visitors
-            </p>
-            <p className="text-2xl font-black text-emerald-600 mt-0.5">
+            </span>
+            <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg border border-emerald-100/60">
+              <Users size={16} />
+            </div>
+          </div>
+          <div className="mt-3 flex items-baseline gap-2">
+            <span className="text-2xl font-bold text-slate-900 tracking-tight">
               {data?.totalVisitorsToday ?? 0}
-            </p>
+            </span>
+            <span className="text-[10px] font-medium text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">
+              Live
+            </span>
           </div>
         </div>
 
-        <div className="bg-white border border-slate-200 p-4 rounded-2xl shadow-sm flex items-center gap-4">
-          <div className="bg-emerald-50 text-emerald-600 p-3 rounded-xl border border-emerald-100">
-            <Activity size={22} />
-          </div>
-          <div>
-            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">
+        {/* Active Now */}
+        <div className="bg-white border border-slate-200/80 p-4 rounded-xl shadow-xs hover:border-slate-300 transition-all">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
               Active Now
-            </p>
-            <p className="text-2xl font-black text-emerald-600 mt-0.5">
+            </span>
+            <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg border border-emerald-100/60">
+              <Activity size={16} />
+            </div>
+          </div>
+          <div className="mt-3 flex items-baseline gap-2">
+            <span className="text-2xl font-bold text-slate-900 tracking-tight">
               {data?.activeVisitorsNow ?? 0}
-            </p>
+            </span>
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
           </div>
         </div>
 
-        <div className="bg-white border border-slate-200 p-4 rounded-2xl shadow-sm flex items-center gap-4">
-          <div className="bg-emerald-50 text-emerald-600 p-3 rounded-xl border border-emerald-100">
-            <DoorOpen size={22} />
-          </div>
-          <div>
-            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">
+        {/* Total Rooms */}
+        <div className="bg-white border border-slate-200/80 p-4 rounded-xl shadow-xs hover:border-slate-300 transition-all">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
               Total Rooms
-            </p>
-            <p className="text-2xl font-black text-slate-900 mt-0.5">
+            </span>
+            <div className="p-2 bg-slate-100 text-slate-600 rounded-lg border border-slate-200/60">
+              <DoorOpen size={16} />
+            </div>
+          </div>
+          <div className="mt-3">
+            <span className="text-2xl font-bold text-slate-900 tracking-tight">
               {data?.totalRooms ?? 0}
-            </p>
+            </span>
           </div>
         </div>
 
-        <div className="bg-white border border-slate-200 p-4 rounded-2xl shadow-sm flex items-center gap-4">
-          <div className="bg-amber-50 text-amber-600 p-3 rounded-xl border border-amber-100">
-            <Building2 size={22} />
-          </div>
-          <div>
-            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">
+        {/* Occupied */}
+        <div className="bg-white border border-slate-200/80 p-4 rounded-xl shadow-xs hover:border-slate-300 transition-all">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
               Occupied
-            </p>
-            <p className="text-2xl font-black text-amber-600 mt-0.5">
+            </span>
+            <div className="p-2 bg-amber-50 text-amber-600 rounded-lg border border-amber-100/60">
+              <Building2 size={16} />
+            </div>
+          </div>
+          <div className="mt-3">
+            <span className="text-2xl font-bold text-amber-600 tracking-tight">
               {data?.occupiedRooms ?? 0}
-            </p>
+            </span>
           </div>
         </div>
 
-        <div className="bg-white border border-slate-200 p-4 rounded-2xl shadow-sm flex items-center gap-4">
-          <div className="bg-emerald-50 text-emerald-600 p-3 rounded-xl border border-emerald-100">
-            <TrendingUp size={22} />
-          </div>
-          <div>
-            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">
+        {/* Available */}
+        <div className="bg-white border border-slate-200/80 p-4 rounded-xl shadow-xs hover:border-slate-300 transition-all">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
               Available
-            </p>
-            <p className="text-2xl font-black text-emerald-600 mt-0.5">
+            </span>
+            <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg border border-emerald-100/60">
+              <TrendingUp size={16} />
+            </div>
+          </div>
+          <div className="mt-3">
+            <span className="text-2xl font-bold text-emerald-600 tracking-tight">
               {data?.availableRooms ?? 0}
-            </p>
+            </span>
           </div>
         </div>
       </div>
 
-      {/* Graphs Grid Layout */}
+      {/* CHARTS GRID */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* 1. LINE / BAR GRAPH: 7-Day Visitor Trend */}
-        <div className="lg:col-span-2 bg-white border border-slate-200 p-6 rounded-2xl shadow-sm flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-4">
+        {/* 1. VISITOR TREND CHART */}
+        <div className="lg:col-span-2 bg-white border border-slate-200/80 p-6 rounded-xl shadow-xs flex flex-col justify-between">
+          <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-2">
-              <TrendingUp className="text-emerald-600" size={20} />
-              <h3 className="font-bold text-slate-800 text-sm">
-                Visitor Trend (Last 7 Days)
+              <TrendingUp className="text-emerald-500" size={18} />
+              <h3 className="font-semibold text-slate-900 text-sm">
+                7-Day Traffic Analysis
               </h3>
             </div>
+            <span className="text-[11px] text-slate-400 font-mono">
+              Daily Visitors
+            </span>
           </div>
 
-          <div className="h-60 flex items-end justify-between gap-3 pt-6 px-2 border-b border-slate-100">
+          {/* BAR CONTAINER */}
+          <div className="h-56 flex items-end justify-between gap-3 pt-6 pb-2 px-2 border-b border-slate-100 relative">
             {data?.visitorTrends?.map((trend, i) => {
               const maxCount = Math.max(
                 ...(data.visitorTrends.map((t) => t.visitorCount) || [1]),
@@ -165,16 +210,20 @@ export function FirstView() {
               return (
                 <div
                   key={i}
-                  className="flex-1 flex flex-col items-center gap-2 h-full justify-end group"
+                  className="flex-1 flex flex-col items-center gap-2 h-full justify-end group relative"
                 >
-                  <span className="text-xs font-bold text-emerald-700 opacity-0 group-hover:opacity-100 transition-opacity">
+                  {/* Tooltip badge */}
+                  <span className="text-[10px] font-bold text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity absolute -top-6 shadow-xs border border-slate-200">
                     {trend.visitorCount}
                   </span>
+
+                  {/* Bar element */}
                   <div
-                    style={{ height: `${Math.max(heightPercent, 12)}%` }}
-                    className="w-full bg-[#00ed64] group-hover:bg-[#00c654] rounded-t-lg transition-all duration-300 shadow-sm"
-                  ></div>
-                  <span className="text-[11px] font-semibold text-slate-500 whitespace-nowrap">
+                    style={{ height: `${Math.max(heightPercent, 8)}%` }}
+                    className="w-full bg-emerald-500 hover:bg-emerald-400 rounded-t-md transition-all duration-200"
+                  />
+
+                  <span className="text-[11px] font-medium text-slate-400 whitespace-nowrap mt-2">
                     {trend.dateLabel}
                   </span>
                 </div>
@@ -183,12 +232,12 @@ export function FirstView() {
           </div>
         </div>
 
-        {/* 2. DEMOGRAPHICS GRAPH: Gender Distribution */}
-        <div className="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm flex flex-col justify-between">
-          <div className="flex items-center gap-2 mb-4">
-            <PieChart className="text-emerald-600" size={20} />
-            <h3 className="font-bold text-slate-800 text-sm">
-              Gender Distribution
+        {/* 2. DEMOGRAPHICS GRAPH */}
+        <div className="bg-white border border-slate-200/80 p-6 rounded-xl shadow-xs flex flex-col justify-between">
+          <div className="flex items-center gap-2 mb-6">
+            <PieChart className="text-emerald-500" size={18} />
+            <h3 className="font-semibold text-slate-900 text-sm">
+              Demographics
             </h3>
           </div>
 
@@ -203,40 +252,43 @@ export function FirstView() {
 
               return (
                 <div key={i} className="space-y-1.5">
-                  <div className="flex justify-between text-xs font-bold text-slate-700">
+                  <div className="flex justify-between text-xs font-semibold text-slate-700">
                     <span>{item.gender}</span>
-                    <span className="text-emerald-600">
+                    <span className="text-slate-500 font-mono">
                       {item.count} ({percentage}%)
                     </span>
                   </div>
-                  <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                  <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
                     <div
                       style={{ width: `${percentage}%` }}
-                      className={`h-full rounded-full ${i % 2 === 0 ? "bg-[#00ed64]" : "bg-emerald-400"}`}
-                    ></div>
+                      className={`h-full rounded-full transition-all duration-300 ${
+                        i % 2 === 0 ? "bg-emerald-500" : "bg-slate-700"
+                      }`}
+                    />
                   </div>
                 </div>
               );
             })}
+
             {(!data?.genderDistribution ||
               data.genderDistribution.length === 0) && (
-              <p className="text-xs text-slate-400 text-center py-10">
-                No demographic data available
+              <p className="text-xs text-slate-400 text-center py-8">
+                No demographic metrics recorded
               </p>
             )}
           </div>
 
-          <div className="pt-4 border-t border-slate-100 text-[11px] font-medium text-slate-400 text-center">
-            Calculated across all registered visitors
+          <div className="pt-4 border-t border-slate-100 text-[11px] text-slate-400 text-center font-mono">
+            Aggregate visitor logs
           </div>
         </div>
 
         {/* 3. REASON BREAKDOWN */}
-        <div className="lg:col-span-3 bg-white border border-slate-200 p-6 rounded-2xl shadow-sm">
+        <div className="lg:col-span-3 bg-white border border-slate-200/80 p-6 rounded-xl shadow-xs">
           <div className="flex items-center gap-2 mb-5">
-            <BarChart3 className="text-emerald-600" size={20} />
-            <h3 className="font-bold text-slate-800 text-sm">
-              Visits Breakdown by Reason
+            <BarChart3 className="text-emerald-500" size={18} />
+            <h3 className="font-semibold text-slate-900 text-sm">
+              Visit Purpose Breakdown
             </h3>
           </div>
 
@@ -244,24 +296,25 @@ export function FirstView() {
             {data?.visitsByReason?.map((reason, i) => (
               <div
                 key={i}
-                className="bg-emerald-50/40 border border-emerald-100 p-4 rounded-xl flex flex-col justify-between"
+                className="bg-slate-50/60 border border-slate-200/60 p-4 rounded-xl flex flex-col justify-between hover:bg-slate-50 transition-colors"
               >
-                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">
+                <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
                   {reason.reason}
                 </span>
                 <div className="flex items-baseline justify-between mt-3">
-                  <span className="text-2xl font-black text-emerald-600">
+                  <span className="text-2xl font-bold text-slate-900 tracking-tight">
                     {reason.count}
                   </span>
-                  <span className="text-xs font-bold text-[#001e2b] bg-[#00ed64] px-2 py-0.5 rounded shadow-xs">
+                  <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-100/80 px-2 py-0.5 rounded">
                     Visits
                   </span>
                 </div>
               </div>
             ))}
+
             {(!data?.visitsByReason || data.visitsByReason.length === 0) && (
               <p className="text-xs text-slate-400 col-span-full text-center py-6">
-                No reason records found.
+                No breakdown data available.
               </p>
             )}
           </div>

@@ -28,10 +28,10 @@ export const roomService=  {
 
             const params = new URLSearchParams();
 
-            // Always append parameters with sensible defaults
             params.append("sortOrder", safeQuery.sortOrder || "desc");
             params.append("page", (safeQuery.Page || 1).toString());
             params.append("size", (safeQuery.Size || 10).toString());
+            params.append("isAvailable", (safeQuery.isRoomAvailable? "true":"false"))
 
             const queryString = params.toString();
 

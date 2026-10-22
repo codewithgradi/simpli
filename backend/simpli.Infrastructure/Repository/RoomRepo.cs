@@ -20,19 +20,21 @@ public class RoomRepo : IRoomRepo
         await _context.SaveChangesAsync();
         return room;
     }
-
     public async Task<List<Room>> GetAllRooms(int companyId, QueryParameters query)
     {
         var queryable = _context.Rooms
             .Where(r => r.CompanyId == companyId);
 
-        // 1. Mandatory OrderBy to satisfy EF Core pagination requirements
+        if (query.IsAvailable)
+        {
+            queryable = queryable.Where(x => x.Status == RoomStatus.Available);
+        }
+
         if (!string.IsNullOrEmpty(query.SortBy))
         {
-            // Dynamic sorting example (or map to specific properties)
             if (query.SortBy.Equals("roomNumber", StringComparison.OrdinalIgnoreCase))
             {
-                queryable = query.SortOrder.ToLower() == "desc"
+                queryable = (query.SortOrder?.ToLower() == "desc")
                     ? queryable.OrderByDescending(r => r.RoomNumber)
                     : queryable.OrderBy(r => r.RoomNumber);
             }
@@ -43,11 +45,10 @@ public class RoomRepo : IRoomRepo
         }
         else
         {
-            // Default fallback ordering
             queryable = queryable.OrderBy(r => r.Id);
         }
 
-        // 2. Safe Pagination using Page and Size
+        // 3. Apply pagination
         int skip = (query.Page - 1) * query.Size;
         queryable = queryable.Skip(skip).Take(query.Size);
 

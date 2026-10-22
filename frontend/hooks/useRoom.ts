@@ -11,7 +11,8 @@ const getRooms = async (companyId: string, query?:PaginatedObject) => {
   setLoading(true);
   setError(null);
   try {
-    const rooms = await roomService.getAll(companyId, query);
+    
+    const rooms = await roomService.getAll(companyId,  {...query, isRoomAvailable : true});
     return rooms;
   } catch (err: any) {
     setError(err.message || "Could not get rooms");

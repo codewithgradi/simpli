@@ -66,58 +66,53 @@ export default function ReservationForm({ onSuccess }: ReservationFormProps) {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [loadingRooms, setLoadingRooms] = useState(false);
 
-  useEffect(() => {
-    const fetchRoomsData = async () => {
-      if (!bid) {
-        setShowNotification({
-          msg: "Business ID missing from URL",
-          show: true,
-          type: "negative",
-        });
-        return;
-      }
+ useEffect(() => {
+   const fetchRoomsData = async () => {
+     if (!bid) return;
 
-      setLoadingRooms(true);
-      try {
-        const result = await getRooms(bid);
+     setLoadingRooms(true);
+     try {
+       const result = await getRooms(bid);
 
-        if (roomError) {
-          setShowNotification({
-            msg: roomError || "Could not get rooms",
-            show: true,
-            type: "negative",
-          });
-          return;
-        }
+       if (roomError) {
+         console.log("Room Error:", roomError);
+         setShowNotification({
+           msg: roomError || "Could not get rooms",
+           show: true,
+           type: "negative",
+         });
+         return;
+       }
 
-        if (result) {
-          const actualData: Room[] = Array.isArray(result)
-            ? result
-            : (result as any).data || (result as any).rooms || [];
+       if (result) {
+         const actualData: Room[] = Array.isArray(result)
+           ? result
+           : (result as any).data || (result as any).rooms || [];
 
-          // Case-insensitive filter for available rooms
-          const availableOnly = actualData.filter((room) => {
-            const statusStr = String(room.status).toLowerCase();
-            return statusStr === "available" || statusStr === "0";
-          });
 
-          setRooms(availableOnly);
-        }
-      } catch (err) {
-        console.error("Fetch error:", err);
-        setShowNotification({
-          msg: "Server error fetching rooms",
-          show: true,
-          type: "negative",
-        });
-      } finally {
-        setLoadingRooms(false);
-      }
-    };
+         // Case-insensitive filter for available rooms
+         const availableOnly = actualData.filter((room) => {
+           const statusStr = String(room.status).toLowerCase();
+           return statusStr === "available" || statusStr === "0";
+         });
+
+
+         setRooms(availableOnly);
+       }
+     } catch (err) {
+       console.error("Fetch error:", err);
+       setShowNotification({
+         msg: "Server error fetching rooms",
+         show: true,
+         type: "negative",
+       });
+     } finally {
+       setLoadingRooms(false);
+     }
+   };
 
     fetchRoomsData();
-  }, [bid]);
-
+  }, [bid]); 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {

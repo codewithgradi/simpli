@@ -35,7 +35,7 @@ public class EmailService : IEmailService
 
     public async Task SendPasswordResetEmailAsync(string email, string companyName, string resetToken)
     {
-        string environment = _configuration["OtherSettings:CurrentEnvironment"] ?? "dev";
+        string environment = _configuration["OtherSettings:CurrentEnviroment"] ?? "dev";
 
         // Fix: point to Prod vs Dev correctly
         string? url = environment == "prod"
@@ -44,7 +44,7 @@ public class EmailService : IEmailService
 
         if (string.IsNullOrEmpty(url) || url == "placeholder")
         {
-            url = "http://localhost:3000";
+            url = "https://simply-io.vercel.app";
         }
 
         string resetLink = $"{url}/code/reset?token={Uri.EscapeDataString(resetToken)}&email={Uri.EscapeDataString(email)}";
