@@ -58,7 +58,7 @@ export function useVisitor(){
           return res;
         } catch (err: any) {
           setError(err.message || "Could not check out");
-          setLoading(false);
+          throw err;
         } finally {
           setLoading(false);
         }

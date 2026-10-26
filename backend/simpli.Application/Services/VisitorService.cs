@@ -56,7 +56,7 @@ public class VisitorService
   {
     if (dto == null)
     {
-      Console.WriteLine("Passcode androom Id missing");
+      Console.WriteLine("Passcode and room Id missing");
       return;
     }
     var entity = _mapper.MapToEntityFromCheckOut(dto);

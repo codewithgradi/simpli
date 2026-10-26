@@ -1,19 +1,60 @@
-import { apiClient } from "@/context/apiClient";
+import { apiClient, API_BASE_URL } from "@/context/apiClient";
+import Cookies from "js-cookie";
 
 export interface ChatInterface {
   message: string;
   companyId: string;
 }
 
+const getAuthHeaders = () => {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  if (typeof window !== "undefined") {
+    const token = Cookies.get("jwt") || Cookies.get("accessToken");
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+  }
+  return headers;
+};
+
 export const chatService = {
   async chat(data: ChatInterface): Promise<any> {
-    // Pass an object as the body so it serializes correctly into JSON
-    const response = await apiClient.post(`/api/chat/${data.companyId}`, {
+    const response: any = await apiClient.post(`/api/chat/${data.companyId}`, {
       message: data.message,
-      request: data.message, // Includes both in case the backend binds to 'request'
+      request: data.message,
+    });
+    return response?.reply || response?.message || response;
+  },
+
+  async streamChat(
+    data: ChatInterface,
+    onChunk: (text: string) => void,
+  ): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/api/chat/${data.companyId}`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({
+        message: data.message,
+        request: data.message,
+      }),
     });
 
-    // Return response data or reply depending on your apiClient wrapper
-    return response;
+    if (!response.ok) {
+      const errorBody = await response.text();
+      throw new Error(errorBody || "Could not process chat request.");
+    }
+
+    const json = await response.json();
+    const replyText = json?.reply || json?.message || JSON.stringify(json);
+
+    // Simulate smooth streaming typewriter effect for a friendly UI
+    const chunkSize = 4;
+    for (let i = 0; i < replyText.length; i += chunkSize) {
+      const chunk = replyText.slice(i, i + chunkSize);
+      onChunk(chunk);
+      await new Promise((resolve) => setTimeout(resolve, 12));
+    }
   },
 };

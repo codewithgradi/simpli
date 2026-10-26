@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using simpli.Application.Dtos;
 using simpli.Application.Services;
 using simpli.Domain.Entities;
+using simpli.Domain.Exceptions;
 
 namespace simpli.Api.Controllers
 {
@@ -60,8 +61,16 @@ namespace simpli.Api.Controllers
     public async Task<IActionResult> CheckOut([FromBody] CheckOutDto outDto)
     {
       if (!ModelState.IsValid) return BadRequest(ModelState);
-      await _visitorService.CheckOut(outDto);
-      return Ok("Checked out successfully");
+      try
+      {
+        await _visitorService.CheckOut(outDto);
+        return Ok("Checked out successfully");
+      }
+      catch (InvalidOperationException e)
+      {
+        return BadRequest(new { message = e.Message });
+      }
+      catch (ResourceNotFoundException e) { return BadRequest(new { message = e.Message }); }
     }
     [Authorize]
     [HttpGet("{id:int}", Name = "GetVisitor")]

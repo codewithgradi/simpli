@@ -17,7 +17,6 @@ import {
 import Link from "next/link";
 
 // Custom Hooks
-import { useSystemService } from "@/hooks/useSystemService";
 import { useChat } from "@/hooks/useChat";
 import { useVisitor } from "@/hooks/useVisitor";
 import { useCompany } from "@/hooks/useCompany";
@@ -47,7 +46,6 @@ export default function GuardExitPage() {
     "Scan visitor pass to authorize exit",
   );
 
-  // Scanning lock ref to prevent rapid overlapping camera triggers
   const isScanningRef = useRef(false);
 
   // Chat & Company State
@@ -62,13 +60,11 @@ export default function GuardExitPage() {
     },
   ]);
 
-  // Stabilize getCompany reference to prevent infinite loops
   const getCompanyRef = useRef(getCompany);
   useEffect(() => {
     getCompanyRef.current = getCompany;
   }, [getCompany]);
 
-  // 1. Fetch Company on Mount using stable ref (Runs ONLY ONCE)
   useEffect(() => {
     const fetchCompanyData = async () => {
       try {
@@ -84,7 +80,7 @@ export default function GuardExitPage() {
     fetchCompanyData();
   }, []);
 
-  // Helper to extract clean error string
+  // Helper to extract clean error string from .NET API error responses
   const getErrorMessage = (err: any, fallback: string): string => {
     if (!err) return fallback;
     if (typeof err === "string") return err;
@@ -93,16 +89,24 @@ export default function GuardExitPage() {
     if (message) {
       try {
         const parsed = JSON.parse(message);
-        return parsed.detail || parsed.title || parsed.message || message;
+        if (parsed.message) return parsed.message;
+        if (parsed.title) return parsed.title;
+        if (parsed.detail) return parsed.detail;
+        if (parsed.errors) {
+          const firstKey = Object.keys(parsed.errors)[0];
+          if (firstKey && Array.isArray(parsed.errors[firstKey])) {
+            return parsed.errors[firstKey][0];
+          }
+        }
+        return message;
       } catch {
         return message;
       }
     }
-
     return fallback;
   };
 
-  // Helper to format AI response text (handles newlines, bolding, and bullet points)
+  // Well-formatted message content renderer (handles bolding, bullet points, and spacing)
   const formatMessageContent = (content: string): ReactNode => {
     if (!content) return null;
     const lines = content.split("\n");
@@ -112,7 +116,6 @@ export default function GuardExitPage() {
       const isBullet = trimmed.startsWith("-") || trimmed.startsWith("*");
       const cleanText = isBullet ? trimmed.replace(/^[-*]\s*/, "") : line;
 
-      // Parse **bold** markdown tags
       const parts = cleanText.split(/(\*\*.*?\*\*)/g);
       const renderedParts = parts.map((part, partIdx) => {
         if (part.startsWith("**") && part.endsWith("**")) {
@@ -143,17 +146,14 @@ export default function GuardExitPage() {
   };
 
   // Scanner Action
-  // Scanner Action
   const handleScan = async (rawDecoded: any) => {
-    console.log("Raw scan result:", rawDecoded);
     if (isScanningRef.current || status === "loading" || status === "success")
       return;
 
     let passCode = "";
-    let scanRoomId = roomId; // Fallback to current input state
+    let scanRoomId = roomId;
 
     try {
-      // If the QR code contains a JSON string, parse it
       const parsed =
         typeof rawDecoded === "string" ? JSON.parse(rawDecoded) : rawDecoded;
       passCode =
@@ -162,10 +162,9 @@ export default function GuardExitPage() {
         (typeof rawDecoded === "string" ? rawDecoded : "");
       if (parsed.roomId) {
         scanRoomId = parsed.roomId;
-        setRoomId(parsed.roomId); // Sync state with scanned room/gate
+        setRoomId(parsed.roomId);
       }
     } catch {
-      // If it's not JSON, treat the raw string as just the passCode
       passCode =
         typeof rawDecoded === "string" ? rawDecoded : rawDecoded?.passCode;
     }
@@ -210,7 +209,7 @@ export default function GuardExitPage() {
     }
   };
 
-  // Chat Action
+  // Chat Action with Streaming Support
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!chatInput.trim() || chatLoading) return;
@@ -229,50 +228,50 @@ export default function GuardExitPage() {
 
     const userMsg = chatInput;
     setChatInput("");
-    setChatMessages((prev) => [...prev, { role: "user", content: userMsg }]);
 
-    const chatPayload: ChatInterface = {
-      message: userMsg,
-      companyId: String(companyId),
-    };
+    // 1. Add user message and empty assistant placeholder for streaming
+    setChatMessages((prev) => [
+      ...prev,
+      { role: "user", content: userMsg },
+      { role: "assistant", content: "" },
+    ]);
 
     try {
-      const response: any = await chat(chatPayload);
-
-      if (response) {
-        const replyText =
-          typeof response === "string"
-            ? response
-            : response?.reply ||
-              response?.Reply ||
-              response?.message ||
-              JSON.stringify(response);
-
-        setChatMessages((prev) => [
-          ...prev,
-          { role: "assistant", content: replyText },
-        ]);
-      } else {
-        setChatMessages((prev) => [
-          ...prev,
-          {
-            role: "assistant",
-            content: "Unable to reach security server. Please retry.",
-          },
-        ]);
-      }
-    } catch (err: any) {
-      setChatMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          content: getErrorMessage(err, "Could not process chat request."),
+      // 2. Stream response chunks into the placeholder
+      await chat(
+        { message: userMsg, companyId: String(companyId) },
+        (chunk) => {
+          setChatMessages((prev) => {
+            const updated = [...prev];
+            const lastIndex = updated.length - 1;
+            if (updated[lastIndex].role === "assistant") {
+              updated[lastIndex] = {
+                ...updated[lastIndex],
+                content: updated[lastIndex].content + chunk,
+              };
+            }
+            return updated;
+          });
         },
-      ]);
+      );
+    } catch (err: any) {
+      setChatMessages((prev) => {
+        const updated = [...prev];
+        const lastIndex = updated.length - 1;
+        if (
+          updated[lastIndex].role === "assistant" &&
+          !updated[lastIndex].content
+        ) {
+          updated[lastIndex].content = getErrorMessage(
+            err,
+            "Could not process chat request.",
+          );
+        }
+        return updated;
+      });
     }
   };
 
-  // Determine Online/Offline Status for Support
   const isOnline = Boolean(companyId) && !companyLoading;
 
   return (
@@ -311,7 +310,7 @@ export default function GuardExitPage() {
 
       {/* Main Workspace Layout */}
       <div className="flex-1 flex flex-col md:flex-row max-w-7xl w-full mx-auto p-4 md:p-6 gap-6 overflow-hidden">
-        {/* Navigation Sidebar */}
+        {/* Sidebar Navigation */}
         <nav className="flex md:flex-col gap-2 shrink-0 w-full md:w-60 bg-white border border-slate-200 p-2.5 rounded-2xl shadow-sm">
           <button
             onClick={() => setActiveTab("scanner")}
@@ -340,15 +339,13 @@ export default function GuardExitPage() {
 
         {/* Content Panel */}
         <section className="flex-1 bg-white border border-slate-200 rounded-2xl p-5 md:p-6 flex flex-col shadow-sm min-h-[520px]">
-          {/* TAB 1: SCANNER - Rendered ONLY when active tab is scanner */}
+          {/* TAB 1: SCANNER */}
           <div
             className={`flex-1 flex-col items-center justify-center max-w-lg mx-auto w-full ${activeTab === "scanner" ? "flex" : "hidden"}`}
           >
-            {/* Gate / Room Configuration */}
             <div className="w-full mb-5 bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl flex items-center justify-between gap-3">
               <div className="flex items-center gap-2 text-slate-700 text-xs font-semibold uppercase tracking-wider">
                 <MapPin size={16} className="text-emerald-600" />
-                <span>Room ID</span>
               </div>
               <input
                 type="text"
@@ -366,7 +363,6 @@ export default function GuardExitPage() {
               />
             </div>
 
-            {/* Camera Scanner Viewport */}
             <div
               className={`relative w-full p-1.5 rounded-2xl transition-all duration-300 ${
                 status === "success"
@@ -382,7 +378,6 @@ export default function GuardExitPage() {
                 )}
               </div>
 
-              {/* Status Overlay */}
               {status !== "idle" && (
                 <div
                   className={`absolute inset-0 z-20 flex flex-col items-center justify-center backdrop-blur-md rounded-2xl p-6 transition-all ${
@@ -415,7 +410,6 @@ export default function GuardExitPage() {
               )}
             </div>
 
-            {/* Guidance Footer */}
             <div className="mt-5 w-full bg-slate-50 border border-slate-200 p-4 rounded-xl flex items-center gap-3">
               <div className="bg-emerald-100 p-2.5 rounded-lg text-emerald-700 shrink-0">
                 <Camera size={20} />
@@ -434,7 +428,6 @@ export default function GuardExitPage() {
           {/* TAB 2: AI GUARD ASSISTANT */}
           {activeTab === "chat" && (
             <div className="flex-1 flex flex-col h-full">
-              {/* Header Info with Online/Offline Status */}
               <div className="pb-3 mb-4 border-b border-slate-200 flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
                   <Bot size={20} className="text-emerald-600" />
@@ -505,7 +498,7 @@ export default function GuardExitPage() {
                   type="text"
                   value={chatInput}
                   onChange={(e) => setChatInput(e.target.value)}
-                  placeholder="Type a message or issue..."
+                  placeholder="Ask about visitor records or security logs..."
                   className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-900 focus:outline-none focus:border-emerald-600 focus:bg-white transition-all"
                 />
                 <button
@@ -521,7 +514,6 @@ export default function GuardExitPage() {
         </section>
       </div>
 
-      {/* Footer */}
       <footer className="w-full bg-white border-t border-slate-200 py-2.5 px-6 text-center text-xs text-slate-500 font-medium shrink-0">
         Simply Terminal • Operating Normally
       </footer>

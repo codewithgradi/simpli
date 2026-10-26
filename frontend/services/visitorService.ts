@@ -55,6 +55,9 @@ export interface PaginatedObject {
   SortBy?: string;
   Size?: number;
 }
+export interface CheckOutResponse{
+  message : string;
+}
 export const visitorService = {
   async getAll(query?: PaginatedObject): Promise<Visitor[]> {
     const params = new URLSearchParams();
@@ -72,12 +75,7 @@ export const visitorService = {
   async checkIn(data: CheckIn, roomId: string): Promise<Visitor> {
     return apiClient.post(`/api/visitor/check-in?RoomId=${roomId}`, data);
   },
-  async checkOut(data: CheckOut): Promise<void> {
-    
-    try {
+  async checkOut(data: CheckOut): Promise<CheckOutResponse> {
       return await apiClient.patch(`/api/visitor/check-out`, data);
-    } catch (err: any) {
-      throw err;
-    }
   },
 };

@@ -68,7 +68,11 @@ public class VisitorRepo : IVisitorRepo
         {
             throw new ResourceNotFoundException("No visitor was found");
         }
-
+        if (visitor.CheckInTime == null) { throw new InvalidOperationException("visitor has not checked in yet"); }
+        if (visitor.CheckOutTime != null)
+        {
+            throw new InvalidOperationException("Visitor is already checked out");
+        }
         var room = await _context.Rooms.FirstOrDefaultAsync(x => x.Id == checkout.RoomId);
         if (room == null)
         {
@@ -153,7 +157,7 @@ public class VisitorRepo : IVisitorRepo
     }
     public async Task<List<Visitor>> GetAllVisitorsStats(int companyID)
     {
-        return await _context.Visitors.Where(x=>x.CompanyId == companyID).ToListAsync();
+        return await _context.Visitors.Where(x => x.CompanyId == companyID).ToListAsync();
     }
 
     public async Task<Visitor> GetVisitor(int id)
