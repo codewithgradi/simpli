@@ -39,7 +39,7 @@ export default function GuardExitPage() {
   const { getCompany, loading: companyLoading } = useCompany();
 
   // Scanner & Terminal State
-  const [roomId, setRoomId] = useState("Gate-01");
+  const [roomId, setRoomId] = useState<number | null>(0);
   const [status, setStatus] = useState<
     "idle" | "loading" | "success" | "error"
   >("idle");
@@ -143,19 +143,46 @@ export default function GuardExitPage() {
   };
 
   // Scanner Action
-  const handleScan = async (decodedText: string) => {
+  // Scanner Action
+  const handleScan = async (rawDecoded: any) => {
+    console.log("Raw scan result:", rawDecoded);
     if (isScanningRef.current || status === "loading" || status === "success")
       return;
 
-    if (!roomId.trim()) {
+    let passCode = "";
+    let scanRoomId = roomId; // Fallback to current input state
+
+    try {
+      // If the QR code contains a JSON string, parse it
+      const parsed =
+        typeof rawDecoded === "string" ? JSON.parse(rawDecoded) : rawDecoded;
+      passCode =
+        parsed.passCode ||
+        parsed.code ||
+        (typeof rawDecoded === "string" ? rawDecoded : "");
+      if (parsed.roomId) {
+        scanRoomId = parsed.roomId;
+        setRoomId(parsed.roomId); // Sync state with scanned room/gate
+      }
+    } catch {
+      // If it's not JSON, treat the raw string as just the passCode
+      passCode =
+        typeof rawDecoded === "string" ? rawDecoded : rawDecoded?.passCode;
+    }
+
+    if (!scanRoomId) {
       setStatus("error");
       setScanMessage("Room / Gate ID required");
       setTimeout(() => setStatus("idle"), 3000);
       return;
     }
 
-    const cleanPassCode = decodedText.trim();
-    if (!cleanPassCode) return;
+    if (!passCode) {
+      setStatus("error");
+      setScanMessage("Pass Code required");
+      setTimeout(() => setStatus("idle"), 3000);
+      return;
+    }
 
     isScanningRef.current = true;
     setStatus("loading");
@@ -163,8 +190,8 @@ export default function GuardExitPage() {
 
     try {
       const payload: CheckOut = {
-        passCode: cleanPassCode,
-        roomId: roomId,
+        passCode: String(passCode),
+        roomId: Number(scanRoomId),
       };
 
       await checkout(payload);
@@ -321,12 +348,19 @@ export default function GuardExitPage() {
             <div className="w-full mb-5 bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl flex items-center justify-between gap-3">
               <div className="flex items-center gap-2 text-slate-700 text-xs font-semibold uppercase tracking-wider">
                 <MapPin size={16} className="text-emerald-600" />
-                <span>Terminal Gate ID:</span>
+                <span>Room ID</span>
               </div>
               <input
                 type="text"
-                value={roomId}
-                onChange={(e) => setRoomId(e.target.value)}
+                value={
+                  roomId !== null && roomId !== undefined
+                    ? roomId.toString()
+                    : ""
+                }
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setRoomId(val === "" ? null : parseInt(val, 10));
+                }}
                 placeholder="Gate ID"
                 className="bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-sm text-slate-900 font-semibold focus:outline-none focus:border-emerald-600 w-36 shadow-sm"
               />

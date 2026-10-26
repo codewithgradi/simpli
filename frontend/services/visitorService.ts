@@ -35,7 +35,8 @@ export interface Visitor {
 }
 export interface CheckOut {
   passCode: string;
-  roomId: string;
+  roomId: number;
+  companyId?:number;
 }
 export interface CheckIn {
   companyId: string;
@@ -74,7 +75,7 @@ export const visitorService = {
   async checkOut(data: CheckOut): Promise<void> {
     
     try {
-      return await apiClient.patch(`/api/visitor/check-out`, {...data, roomId: parseInt(data.roomId, 10)});
+      return await apiClient.patch(`/api/visitor/check-out`, data);
     } catch (err: any) {
       throw err;
     }

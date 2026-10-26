@@ -1,9 +1,10 @@
 "use client";
 
+import { CheckOut } from "@/services/visitorService";
 import { Html5QrcodeScanner } from "html5-qrcode";
 import { useEffect } from "react";
 
-export default function ScannerComponent({ onResult }: { onResult: (data: string) => void }) {
+export default function ScannerComponent({ onResult }: { onResult: (data: CheckOut) => void }) {
   useEffect(() => {
     const scanner = new Html5QrcodeScanner("reader", {
       fps: 20,
@@ -13,7 +14,7 @@ export default function ScannerComponent({ onResult }: { onResult: (data: string
     }, false);
 
     scanner.render(
-      (decodedText) => {
+      (decodedText : any) => {
         onResult(decodedText);
       },
       () => {  }
