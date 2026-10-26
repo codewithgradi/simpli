@@ -49,12 +49,11 @@ export const chatService = {
     const json = await response.json();
     const replyText = json?.reply || json?.message || JSON.stringify(json);
 
-    // Simulate smooth streaming typewriter effect for a friendly UI
     const chunkSize = 4;
     for (let i = 0; i < replyText.length; i += chunkSize) {
       const chunk = replyText.slice(i, i + chunkSize);
       onChunk(chunk);
-      await new Promise((resolve) => setTimeout(resolve, 12));
+      await new Promise((resolve) => setTimeout(resolve, 50));
     }
   },
 };
