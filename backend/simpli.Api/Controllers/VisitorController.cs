@@ -64,7 +64,7 @@ namespace simpli.Api.Controllers
       try
       {
         await _visitorService.CheckOut(outDto);
-        return Ok("Checked out successfully");
+        return Ok(new {message="Checked out successfully"});
       }
       catch (InvalidOperationException e)
       {

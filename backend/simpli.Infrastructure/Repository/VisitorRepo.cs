@@ -69,7 +69,7 @@ public class VisitorRepo : IVisitorRepo
             throw new ResourceNotFoundException("No visitor was found");
         }
         if (visitor.CheckInTime == null) { throw new InvalidOperationException("visitor has not checked in yet"); }
-        if (visitor.CheckOutTime != null)
+        if (visitor.CheckOutTime != DateTime.MinValue)
         {
             throw new InvalidOperationException("Visitor is already checked out");
         }
