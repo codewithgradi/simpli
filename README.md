@@ -26,7 +26,7 @@ Most workplaces answer it with a paper sign-in sheet — slow queues, illegible 
 
 - 🏢 **Businesses** register, log in, create rooms/spaces, and generate a QR code for each one.
 - 👤 **Visitors** simply scan the QR at the door, fill a short form, and check in — no app download, no reception queue.
-- 📧 The system instantly **emails the visitor an exit-pass QR code**.
+- 📧 The system instantly **issues the visitor an exit-pass QR code**.
 - 🛡️ **Security guards** scan that pass at the exit to check the visitor out, freeing the room.
 
 The result: a clean, real-time, digital trail of everyone on-site — in and out.
@@ -39,7 +39,7 @@ The result: a clean, real-time, digital trail of everyone on-site — in and out
 |---|---|
 | 🏢 **Business Console** | Registration & login (JWT), room creation & management, company profile (update / soft-delete / reactivate), dashboard |
 | 🎟️ **QR Passes** | Room QR generation for check-in, unique 4-digit pass codes, exit-pass QR emailed as a PNG attachment |
-| 👤 **Visitor Flow** | App-free check-in via QR scan, visitor form, instant email with exit pass, visitor records & listing |
+| 👤 **Visitor Flow** | App-free check-in via QR scan, visitor form, instantly issued with exit pass, visitor records & listing |
 | 🛡️ **Guard Station** | Camera-based QR scanner (`html5-qrcode`), one-scan check-out that frees the room |
 | 🔔 **Notifications** | System email tracking & notification records per company |
 | 📊 **Dashboard** | Recent visitors, analytics charts (`recharts`), printable passes (`react-to-print`) |
